@@ -212,8 +212,22 @@ export default function LeaderDashboardPage() {
               </p>
             </div>
 
+            {/* 渠道双轨状态提示 */}
+            <div className="w-full mt-3 p-2.5 bg-slate-50 rounded-xl border border-slate-200 text-xs flex items-center justify-between">
+              <span className="text-slate-500 font-medium">雙軌訂菜社群：</span>
+              <div className="flex items-center space-x-1.5 font-bold text-[11px]">
+                <span className="text-[#25D366] bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                  WhatsApp 群
+                </span>
+                <span className="text-slate-400">+</span>
+                <span className="text-[#07C160] bg-green-50 px-1.5 py-0.5 rounded border border-green-200">
+                  微信: {leader?.wechatId || "已就緒"}
+                </span>
+              </div>
+            </div>
+
             {/* 操作按钮区 */}
-            <div className="w-full grid grid-cols-2 gap-2.5 mt-4">
+            <div className="w-full grid grid-cols-2 gap-2.5 mt-3">
               <button
                 onClick={handleCopyLink}
                 className="py-2.5 px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold text-xs flex items-center justify-center space-x-1.5 transition active:scale-95"

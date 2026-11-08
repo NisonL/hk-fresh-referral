@@ -13,12 +13,16 @@ import {
   CheckCircle2,
   AlertCircle,
   MessageCircle,
+  Copy,
+  Check,
 } from "lucide-react";
 import { isValidHkPhone } from "@/lib/utils";
 
 interface LeaderInfo {
   inviteCode: string;
   realName: string;
+  hkPhone?: string;
+  wechatId?: string;
   estateId: string;
   estateName: string;
   buildingId: string;
@@ -47,6 +51,9 @@ export default function CustomerJoinPage() {
   const [estates, setEstates] = useState<Estate[]>([]);
   const [buildings, setBuildings] = useState<Building[]>([]);
 
+  // 环境检测：是否在微信内置浏览器打开
+  const [isWeChat, setIsWeChat] = useState(false);
+
   // 表单状态
   const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState("");
@@ -60,13 +67,28 @@ export default function CustomerJoinPage() {
   const [countdown, setCountdown] = useState(0);
   const [submitting, setSubmitting] = useState(false);
 
+  // 微信复制状态
+  const [wechatCopied, setWechatCopied] = useState(false);
+  const [activeChannelTab, setActiveChannelTab] = useState<"WHATSAPP" | "WECHAT">("WHATSAPP");
+
   // 成功弹窗
   const [successData, setSuccessData] = useState<{
     customerName: string;
     buildingName: string;
     flatNo: string;
     whatsAppGroupUrl: string;
+    wechatId: string;
   } | null>(null);
+
+  useEffect(() => {
+    if (typeof navigator !== "undefined") {
+      const isWx = /micromessenger/i.test(navigator.userAgent);
+      setIsWeChat(isWx);
+      if (isWx) {
+        setActiveChannelTab("WECHAT");
+      }
+    }
+  }, []);
 
   // 加载楼长及网格基础数据
   useEffect(() => {
@@ -119,6 +141,13 @@ export default function CustomerJoinPage() {
     }, 500);
   };
 
+  // 复制楼长微信号
+  const handleCopyWechat = (wxId: string) => {
+    navigator.clipboard.writeText(wxId);
+    setWechatCopied(true);
+    setTimeout(() => setWechatCopied(false), 2500);
+  };
+
   // 提交登记
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -163,17 +192,22 @@ export default function CustomerJoinPage() {
 
       // 登记成功
       const groupUrl = result.whatsAppGroupUrl || leader?.whatsAppGroupUrl || "https://chat.whatsapp.com/";
+      const wxId = leader?.wechatId || "hk_fresh_official";
+
       setSuccessData({
         customerName: realName,
         buildingName: result.customer.buildingName,
         flatNo: result.customer.flatNo,
         whatsAppGroupUrl: groupUrl,
+        wechatId: wxId,
       });
 
-      // 延迟 1.5 秒自动唤起 WhatsApp
-      setTimeout(() => {
-        window.location.href = groupUrl;
-      }, 1500);
+      // 如果不是在微信内置浏览器打开，且用户首选 WhatsApp，1.5 秒后自动唤起 WhatsApp
+      if (!isWeChat) {
+        setTimeout(() => {
+          window.location.href = groupUrl;
+        }, 1600);
+      }
     } catch (err: any) {
       alert(err.message || "網絡錯誤");
     } finally {
@@ -225,7 +259,7 @@ export default function CustomerJoinPage() {
           <span className="text-emerald-200 text-xl font-bold">屋邨直通車</span>
         </h1>
         <p className="text-emerald-100/90 text-xs mt-1 font-medium">
-          街坊特惠價 · 比街市平3成 · 傍晚大堂自提
+          街坊特惠價 · 比街市平3成 · WhatsApp / 微信雙群訂菜
         </p>
 
         {/* 楼长专属背书卡片 */}
@@ -432,7 +466,7 @@ export default function CustomerJoinPage() {
                 </>
               ) : (
                 <>
-                  <span>確認登記 · 進入 WhatsApp 訂菜群</span>
+                  <span>確認登記 · 進入 WhatsApp / 微信訂菜群</span>
                   <ArrowRight className="w-5 h-5" />
                 </>
               )}
@@ -452,60 +486,133 @@ export default function CustomerJoinPage() {
         </div>
       </div>
 
-      {/* 登记成功弹窗 & 自动联动跳转 */}
+      {/* 登记成功弹窗 & 双轨入群支持 (WhatsApp + 微信) */}
       {successData && (
-        <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-5 animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl p-6 w-full max-w-sm text-center shadow-2xl border border-slate-100">
-            <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-3 shadow-inner">
-              <CheckCircle2 className="w-10 h-10" />
+        <div className="fixed inset-0 bg-slate-900/75 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl p-5 w-full max-w-sm text-center shadow-2xl border border-slate-100 max-h-[92vh] overflow-y-auto">
+            <div className="w-14 h-14 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-2.5 shadow-inner">
+              <CheckCircle2 className="w-9 h-9" />
             </div>
 
-            <h3 className="text-xl font-black text-slate-800">登記成功！</h3>
-            <p className="text-xs text-emerald-700 font-medium mt-1">
-              已為您綁定【{leader.realName}】的專屬自提服務
+            <h3 className="text-lg font-black text-slate-800">登記成功！</h3>
+            <p className="text-xs text-emerald-700 font-medium mt-0.5">
+              已為您綁定【{leader.realName}】的專屬自提點
             </p>
 
-            <div className="bg-slate-50 rounded-xl p-3 my-4 text-xs text-left text-slate-600 space-y-1 border border-slate-200/80">
+            <div className="bg-slate-50 rounded-xl p-2.5 my-3 text-xs text-left text-slate-600 space-y-1 border border-slate-200/80">
               <div className="flex justify-between">
-                <span className="text-slate-600">登記街坊：</span>
+                <span className="text-slate-500">登記街坊：</span>
                 <span className="font-bold text-slate-800">{successData.customerName}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-600">所屬房號：</span>
+                <span className="text-slate-500">所屬房號：</span>
                 <span className="font-bold text-slate-800">
                   {successData.buildingName} {successData.flatNo}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-600">今日截單：</span>
+                <span className="text-slate-500">今日截單：</span>
                 <span className="font-bold text-rose-600">今晚 21:30</span>
               </div>
             </div>
 
-            <div className="space-y-2.5">
-              <p className="text-xs text-slate-500 animate-pulse flex items-center justify-center gap-1">
-                <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                <span>正在為您自動打開 WhatsApp 群組...</span>
-              </p>
-
-              <a
-                href={successData.whatsAppGroupUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full py-3.5 px-4 bg-[#25D366] hover:bg-[#20ba5a] text-white font-bold rounded-xl shadow-md active:scale-95 transition flex items-center justify-center space-x-2 text-sm"
-              >
-                <MessageCircle className="w-5 h-5 fill-white" />
-                <span>立即點擊進入 WhatsApp 群組</span>
-              </a>
-
+            {/* 双轨渠道切换器 (WhatsApp vs 微信) */}
+            <div className="bg-slate-100 p-1 rounded-xl flex items-center mb-3 text-xs font-bold">
               <button
                 type="button"
-                onClick={() => setSuccessData(null)}
-                className="text-xs text-slate-600 hover:text-slate-600 py-1"
+                onClick={() => setActiveChannelTab("WHATSAPP")}
+                className={`flex-1 py-1.5 rounded-lg transition flex items-center justify-center gap-1.5 ${
+                  activeChannelTab === "WHATSAPP"
+                    ? "bg-[#25D366] text-white shadow-sm"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
               >
-                留在本頁查看
+                <MessageCircle className="w-3.5 h-3.5 fill-current" />
+                <span>WhatsApp 群</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveChannelTab("WECHAT")}
+                className={`flex-1 py-1.5 rounded-lg transition flex items-center justify-center gap-1.5 ${
+                  activeChannelTab === "WECHAT"
+                    ? "bg-[#07C160] text-white shadow-sm"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                <span>💬 微信訂菜群</span>
               </button>
             </div>
+
+            {/* 渠道一：WhatsApp 加群 */}
+            {activeChannelTab === "WHATSAPP" && (
+              <div className="space-y-2">
+                {!isWeChat && (
+                  <p className="text-[11px] text-slate-500 animate-pulse flex items-center justify-center gap-1">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                    <span>正在為您自動打開 WhatsApp 群組...</span>
+                  </p>
+                )}
+
+                <a
+                  href={successData.whatsAppGroupUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full py-3 px-4 bg-[#25D366] hover:bg-[#20ba5a] text-white font-bold rounded-xl shadow-md active:scale-95 transition flex items-center justify-center space-x-2 text-sm"
+                >
+                  <MessageCircle className="w-4 h-4 fill-white" />
+                  <span>進入 WhatsApp 訂菜群</span>
+                </a>
+
+                {isWeChat && (
+                  <p className="text-[11px] text-amber-600 font-medium">
+                    提示：微信內可能無法直接打開外部 WhatsApp，建議切換到【微信訂菜群】！
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* 渠道二：微信加群 / 添加楼长微信 */}
+            {activeChannelTab === "WECHAT" && (
+              <div className="space-y-2.5 bg-emerald-50/60 p-3.5 rounded-2xl border border-emerald-200">
+                <div className="text-left space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-slate-600 font-medium">樓長微訊號：</span>
+                    <span className="font-mono font-black text-slate-900 text-sm bg-white px-2 py-0.5 rounded border border-emerald-300">
+                      {successData.wechatId}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-emerald-800 leading-snug">
+                    添加樓長微信，備註【<span className="font-bold text-emerald-700">{successData.buildingName} 買菜</span>】，樓長將在1分鐘內拉您進大廈微信訂菜群！
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => handleCopyWechat(successData.wechatId)}
+                  className="w-full py-2.5 px-3 bg-[#07C160] hover:bg-[#06ad56] text-white font-bold rounded-xl shadow-sm active:scale-95 transition flex items-center justify-center space-x-1.5 text-xs"
+                >
+                  {wechatCopied ? (
+                    <>
+                      <Check className="w-4 h-4" />
+                      <span>已複製微訊號！請去微信粘貼添加</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-4 h-4" />
+                      <span>一鍵複製樓長微訊號</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
+
+            <button
+              type="button"
+              onClick={() => setSuccessData(null)}
+              className="text-xs text-slate-400 hover:text-slate-600 mt-3 block mx-auto py-1"
+            >
+              關閉視窗
+            </button>
           </div>
         </div>
       )}

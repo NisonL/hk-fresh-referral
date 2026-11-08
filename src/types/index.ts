@@ -17,6 +17,8 @@ export interface Leader {
   inviteCode: string; // 专属邀请码，如 HUA888, MING666
   realName: string;   // 称呼，如 華姐, 明哥
   hkPhone: string;    // 8位香港手机号
+  wechatId?: string;  // 楼长微信号，如 hua_jie_so_uk
+  wechatQrUrl?: string; // 微信群二维码/个人二维码
   estateId: string;
   estateName: string; // 如：深水埗蘇屋邨
   buildingId: string;

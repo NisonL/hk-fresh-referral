@@ -20,6 +20,9 @@ export const BRANDING_CONFIG = {
   // 默认 WhatsApp 官方群组链接（如果楼长未配置独立群链接，则使用此备用链接）
   defaultWhatsAppGroupUrl: "https://chat.whatsapp.com/sample-group-invite",
 
+  // 默认官方客服微信号 / 备用微信号
+  defaultWechatId: "hk_fresh_official",
+
   // 客服 WhatsApp（用户遇到问题可一键咨询）
   supportWhatsApp: "85291234567",
 
@@ -27,5 +30,6 @@ export const BRANDING_CONFIG = {
   theme: {
     primaryColor: "#16a34a", // 鲜绿色
     accentColor: "#25D366",  // WhatsApp 绿
+    wechatColor: "#07C160",  // 微信绿
   }
 };

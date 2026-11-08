@@ -23,6 +23,8 @@ export async function GET(
     leader: {
       inviteCode: leader.inviteCode,
       realName: leader.realName,
+      hkPhone: leader.hkPhone,
+      wechatId: leader.wechatId || BRANDING_CONFIG.defaultWechatId,
       estateId: leader.estateId,
       estateName: leader.estateName,
       buildingId: leader.buildingId,
