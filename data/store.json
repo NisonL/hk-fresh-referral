@@ -1,0 +1,140 @@
+{
+  "estates": [
+    {
+      "id": "estate-so-uk",
+      "code": "SO_UK",
+      "nameZh": "深水埗蘇屋邨",
+      "district": "深水埗區"
+    },
+    {
+      "id": "estate-yau-oi",
+      "code": "YAU_OI",
+      "nameZh": "屯門友愛邨",
+      "district": "屯門區"
+    }
+  ],
+  "buildings": [
+    {
+      "id": "bldg-peony",
+      "estateId": "estate-so-uk",
+      "nameZh": "牡丹樓",
+      "blockCode": "PEONY"
+    },
+    {
+      "id": "bldg-camellia",
+      "estateId": "estate-so-uk",
+      "nameZh": "茶花樓",
+      "blockCode": "CAMELLIA"
+    },
+    {
+      "id": "bldg-azalea",
+      "estateId": "estate-so-uk",
+      "nameZh": "杜鵑樓",
+      "blockCode": "AZALEA"
+    },
+    {
+      "id": "bldg-greenwillow",
+      "estateId": "estate-so-uk",
+      "nameZh": "綠柳樓",
+      "blockCode": "GREENWILLOW"
+    },
+    {
+      "id": "bldg-oi-tak",
+      "estateId": "estate-yau-oi",
+      "nameZh": "愛德樓",
+      "blockCode": "OI_TAK"
+    },
+    {
+      "id": "bldg-oi-lai",
+      "estateId": "estate-yau-oi",
+      "nameZh": "愛禮樓",
+      "blockCode": "OI_LAI"
+    }
+  ],
+  "leaders": [
+    {
+      "id": "leader-hua",
+      "inviteCode": "HUA888",
+      "realName": "華姐",
+      "hkPhone": "91234567",
+      "estateId": "estate-so-uk",
+      "estateName": "深水埗蘇屋邨",
+      "buildingId": "bldg-peony",
+      "buildingName": "牡丹樓",
+      "whatsAppGroupUrl": "https://chat.whatsapp.com/invite-suuk-peony-demo",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-25T10:00:00Z"
+    },
+    {
+      "id": "leader-ming",
+      "inviteCode": "MING666",
+      "realName": "明哥",
+      "hkPhone": "98765432",
+      "estateId": "estate-yau-oi",
+      "estateName": "屯門友愛邨",
+      "buildingId": "bldg-oi-tak",
+      "buildingName": "愛德樓",
+      "whatsAppGroupUrl": "https://chat.whatsapp.com/invite-yauoi-oitak-demo",
+      "status": "ACTIVE",
+      "createdAt": "2026-10-26T14:30:00Z"
+    }
+  ],
+  "customers": [
+    {
+      "id": "cust-1793872559365-754",
+      "hkPhone": "91998877",
+      "realName": "????",
+      "estateId": "estate-so-uk",
+      "estateName": "深水埗蘇屋邨",
+      "buildingId": "bldg-peony",
+      "buildingName": "牡丹樓",
+      "flatNo": "1508?",
+      "isSeniorCitizen": true,
+      "boundLeaderId": "leader-hua",
+      "boundInviteCode": "HUA888",
+      "boundAt": "2026-11-05T09:55:59.365Z"
+    },
+    {
+      "id": "cust-1",
+      "hkPhone": "92345678",
+      "realName": "陳太",
+      "estateId": "estate-so-uk",
+      "estateName": "深水埗蘇屋邨",
+      "buildingId": "bldg-peony",
+      "buildingName": "牡丹樓",
+      "flatNo": "1204室",
+      "isSeniorCitizen": false,
+      "boundLeaderId": "leader-hua",
+      "boundInviteCode": "HUA888",
+      "boundAt": "2026-10-28T09:15:00Z"
+    },
+    {
+      "id": "cust-2",
+      "hkPhone": "93456789",
+      "realName": "李伯 (73歲)",
+      "estateId": "estate-so-uk",
+      "estateName": "深水埗蘇屋邨",
+      "buildingId": "bldg-peony",
+      "buildingName": "牡丹樓",
+      "flatNo": "0608室",
+      "isSeniorCitizen": true,
+      "boundLeaderId": "leader-hua",
+      "boundInviteCode": "HUA888",
+      "boundAt": "2026-10-28T11:40:00Z"
+    },
+    {
+      "id": "cust-3",
+      "hkPhone": "94567890",
+      "realName": "黃生",
+      "estateId": "estate-so-uk",
+      "estateName": "深水埗蘇屋邨",
+      "buildingId": "bldg-camellia",
+      "buildingName": "茶花樓",
+      "flatNo": "1802室",
+      "isSeniorCitizen": false,
+      "boundLeaderId": "leader-hua",
+      "boundInviteCode": "HUA888",
+      "boundAt": "2026-10-29T16:20:00Z"
+    }
+  ]
+}
