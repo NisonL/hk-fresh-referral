@@ -21,6 +21,10 @@ import {
   Building2,
   Coins,
   ArrowRight,
+  CheckSquare,
+  Square,
+  Truck,
+  UserCheck,
 } from "lucide-react";
 import { AppConfig, Product, Leader, Customer, Order } from "@/types";
 
@@ -40,7 +44,6 @@ export default function AdminPage() {
 
   // 邀请弹窗与文案复制状态
   const [copiedText, setCopiedText] = useState("");
-  const [selectedProspect, setSelectedProspect] = useState<any>(null);
   const [promoteModalOpen, setPromoteModalOpen] = useState(false);
   const [promoteForm, setPromoteForm] = useState({
     customerPhone: "",
@@ -122,12 +125,29 @@ export default function AdminPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "保存失敗");
-      alert("配置更新成功！");
+      alert("✅ 全局計酬與規則配置更新成功！");
       setConfig(data.config);
     } catch (err: any) {
       alert(err.message);
     } finally {
       setSavingConfig(false);
+    }
+  };
+
+  const handleToggleLeaderDelivery = async (leaderId: string, currentVal: boolean) => {
+    try {
+      const res = await fetch("/api/admin/leaders", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: leaderId, isSelfDelivery: !currentVal }),
+      });
+      if (res.ok) {
+        setLeaders((prev) =>
+          prev.map((l) => (l.id === leaderId ? { ...l, isSelfDelivery: !currentVal } : l))
+        );
+      }
+    } catch (err) {
+      console.error(err);
     }
   };
 
@@ -170,7 +190,7 @@ export default function AdminPage() {
           </div>
 
           <div className="text-xs text-slate-400 font-mono">
-            環境: 蘇屋邨 0 號樣板間
+            環境: 蘇屋邨 0 號樣板間 (純人工對賬·非全自動)
           </div>
         </div>
 
@@ -180,7 +200,7 @@ export default function AdminPage() {
             { id: "grid", label: "網格大廈與 KOC 裂變雷達", icon: MapPin },
             { id: "products", label: "商品貨架動態管理", icon: ShoppingBag },
             { id: "export", label: "清晨鐵閘配送單導出", icon: Download },
-            { id: "rules", label: "計酬規則與包郵引擎", icon: Coins },
+            { id: "rules", label: "計酬規則與打勾開關", icon: Coins },
             { id: "brand", label: "品牌與交付約定配置", icon: Settings },
           ].map((tab) => {
             const Icon = tab.icon;
@@ -260,7 +280,7 @@ export default function AdminPage() {
                     <span>深水埗蘇屋邨 14 座大廈網格滲透穿透看板</span>
                   </h3>
                   <p className="text-xs text-slate-400 mt-0.5">
-                    實時監控各座大廈覆蓋狀態，挖掘空白大廈中的高頻買菜街坊轉化為愛心樓長
+                    監控各座大廈覆蓋狀態；挖掘空白大廈 TOP 買家，由人工定向觸達，絕非冷冰冰自動升級
                   </p>
                 </div>
               </div>
@@ -275,7 +295,7 @@ export default function AdminPage() {
                       <th className="py-2.5 px-3">在冊買菜戶</th>
                       <th className="py-2.5 px-3">累計訂單</th>
                       <th className="py-2.5 px-3">⭐ 核心高潛種子街坊 (發掘目標)</th>
-                      <th className="py-2.5 px-3 text-right">拓荒運營操作</th>
+                      <th className="py-2.5 px-3 text-right">人工邀約操作</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
@@ -349,7 +369,7 @@ export default function AdminPage() {
                                 }}
                                 className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-2.5 py-1 rounded-lg text-[11px] transition"
                               >
-                                升格為樓長
+                                手動升為樓長
                               </button>
                             </>
                           )}
@@ -370,7 +390,7 @@ export default function AdminPage() {
                     <span>街坊轉介紹 KOC 裂變達人雷達（成功推薦戶數 $\ge 1$）</span>
                   </h3>
                   <p className="text-xs text-slate-400 mt-0.5">
-                    先以“純送積分換青菜”吸引街坊拉鄰里，雷達自動捕獲高潛發掘目標，直接面談轉化為樓長
+                    前台只以“純送積分換青菜”吸引街坊拉鄰里；後台雷達抓取已拉 3~5 人的達人，管理員面談後手動邀約
                   </p>
                 </div>
               </div>
@@ -386,14 +406,14 @@ export default function AdminPage() {
                       <th className="py-2.5 px-3">帶動總單量</th>
                       <th className="py-2.5 px-3">買菜積分餘額</th>
                       <th className="py-2.5 px-3">系統高潛評級</th>
-                      <th className="py-2.5 px-3 text-right">樓長轉化操作</th>
+                      <th className="py-2.5 px-3 text-right">人工邀約操作</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
                     {kocLeaderboard.length === 0 ? (
                       <tr>
                         <td colSpan={8} className="py-8 text-center text-slate-400 text-xs">
-                          暫無轉介紹數據，請街坊在前端點擊“推薦街坊得青菜”開始裂變
+                          暫無轉介紹數據，街坊在前端下單或點擊“推薦街坊得青菜”即可累積
                         </td>
                       </tr>
                     ) : (
@@ -510,7 +530,6 @@ export default function AdminPage() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              {/* 导出方式 1: 晨早铁闸挂袋扫楼清册 */}
               <div className="p-5 rounded-2xl border border-emerald-200 bg-emerald-50/50 space-y-3">
                 <div className="text-sm font-black text-emerald-950 flex items-center gap-2">
                   <span>📥 模式一：晨早防盜鐵閘掛袋掃樓清冊</span>
@@ -528,7 +547,6 @@ export default function AdminPage() {
                 </a>
               </div>
 
-              {/* 导出方式 2: 按楼长大宗自提/交接清册 */}
               <div className="p-5 rounded-2xl border border-blue-200 bg-blue-50/50 space-y-3">
                 <div className="text-sm font-black text-blue-950 flex items-center gap-2">
                   <span>📥 模式二：按樓長大宗自提/交接清冊</span>
@@ -549,129 +567,296 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* 模块 4: 规则引擎与计价配置 */}
+        {/* 模块 4: 规则引擎与计价打勾控制 */}
         {activeTab === "rules" && (
-          <form
-            onSubmit={handleSaveConfig}
-            className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-5"
-          >
-            <div>
-              <h3 className="font-black text-base text-slate-900 flex items-center gap-2">
-                <Coins className="w-5 h-5 text-emerald-600" />
-                <span>計酬規則與包郵參數動態引擎</span>
-              </h3>
-              <p className="text-xs text-slate-400 mt-0.5">
-                嚴格遵守司法級 Cap 617 合規（二級封頂），所有參數隨時在此調整，零代碼硬編碼
-              </p>
+          <div className="space-y-6">
+            {/* 卡片 1：全局计算方式打勾开关 */}
+            <form
+              onSubmit={handleSaveConfig}
+              className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-5"
+            >
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                <div>
+                  <h3 className="font-black text-base text-slate-900 flex items-center gap-2">
+                    <CheckSquare className="w-5 h-5 text-emerald-600" />
+                    <span>【全局計算方式打勾開關】（打勾了系統才有，不打勾就沒有）</span>
+                  </h3>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    控制整套系統是否啟用某個計酬維度。打勾即計算入賬，未打勾則完全不扣取、不發放
+                  </p>
+                </div>
+                <button
+                  type="submit"
+                  disabled={savingConfig}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-5 py-2 rounded-xl text-xs flex items-center gap-1.5 shadow active:scale-95 transition"
+                >
+                  <Save className="w-4 h-4" />
+                  <span>{savingConfig ? "保存中..." : "保存全局打勾開關"}</span>
+                </button>
+              </div>
+
+              <div className="space-y-3.5 text-xs">
+                {/* 规则 1: 楼长服务津贴 */}
+                <div className="p-3.5 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="checkbox"
+                      id="chk-leader"
+                      checked={configForm.enableLeaderCommission ?? true}
+                      onChange={(e) =>
+                        setConfigForm({ ...configForm, enableLeaderCommission: e.target.checked })
+                      }
+                      className="w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500 cursor-pointer"
+                    />
+                    <label htmlFor="chk-leader" className="cursor-pointer">
+                      <div className="font-bold text-slate-900">
+                        1. 愛心樓長直屬服務津貼 (Leader Commission)
+                      </div>
+                      <div className="text-[11px] text-slate-400">
+                        {configForm.enableLeaderCommission ? "✅ 已打勾啟用：每筆訂單發放" : "❌ 未打勾：全域停用樓長津貼"}
+                      </div>
+                    </label>
+                  </div>
+                  <div className="flex items-center gap-1.5 font-bold">
+                    <span>HK$</span>
+                    <input
+                      type="number"
+                      step="0.1"
+                      value={configForm.leaderCommissionRate ?? 2.0}
+                      onChange={(e) =>
+                        setConfigForm({
+                          ...configForm,
+                          leaderCommissionRate: parseFloat(e.target.value) || 0,
+                        })
+                      }
+                      className="w-16 px-2 py-1 bg-white border border-slate-200 rounded font-black text-emerald-700 text-xs"
+                    />
+                    <span className="text-slate-400">/ 單</span>
+                  </div>
+                </div>
+
+                {/* 规则 2: 导师带教津贴 */}
+                <div className="p-3.5 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="checkbox"
+                      id="chk-mentor"
+                      checked={configForm.enableMentorAllowance ?? true}
+                      onChange={(e) =>
+                        setConfigForm({ ...configForm, enableMentorAllowance: e.target.checked })
+                      }
+                      className="w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500 cursor-pointer"
+                    />
+                    <label htmlFor="chk-mentor" className="cursor-pointer">
+                      <div className="font-bold text-slate-900">
+                        2. 業務導師帶教津貼 (Mentor Allowance · Cap 617 二級)
+                      </div>
+                      <div className="text-[11px] text-slate-400">
+                        {configForm.enableMentorAllowance ? "✅ 已打勾啟用：老樓長培養新樓長享受帶教津貼" : "❌ 未打勾：全域停用導師津貼"}
+                      </div>
+                    </label>
+                  </div>
+                  <div className="flex items-center gap-1.5 font-bold">
+                    <span>HK$</span>
+                    <input
+                      type="number"
+                      step="0.1"
+                      value={configForm.mentorAllowanceRate ?? 0.5}
+                      onChange={(e) =>
+                        setConfigForm({
+                          ...configForm,
+                          mentorAllowanceRate: parseFloat(e.target.value) || 0,
+                        })
+                      }
+                      className="w-16 px-2 py-1 bg-white border border-slate-200 rounded font-black text-emerald-700 text-xs"
+                    />
+                    <span className="text-slate-400">/ 單</span>
+                  </div>
+                </div>
+
+                {/* 规则 3: 步兵挂闸运力费 */}
+                <div className="p-3.5 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="checkbox"
+                      id="chk-runner"
+                      checked={configForm.enableRunnerDelivery ?? true}
+                      onChange={(e) =>
+                        setConfigForm({ ...configForm, enableRunnerDelivery: e.target.checked })
+                      }
+                      className="w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500 cursor-pointer"
+                    />
+                    <label htmlFor="chk-runner" className="cursor-pointer">
+                      <div className="font-bold text-slate-900">
+                        3. 步兵晨早掛閘運力費 (Runner Delivery Fee)
+                      </div>
+                      <div className="text-[11px] text-slate-400">
+                        {configForm.enableRunnerDelivery ? "✅ 已打勾啟用：每單支付運力津貼" : "❌ 未打勾：全域停用運力支出"}
+                      </div>
+                    </label>
+                  </div>
+                  <div className="flex items-center gap-1.5 font-bold">
+                    <span>HK$</span>
+                    <input
+                      type="number"
+                      step="0.1"
+                      value={configForm.runnerDeliveryFee ?? 2.0}
+                      onChange={(e) =>
+                        setConfigForm({
+                          ...configForm,
+                          runnerDeliveryFee: parseFloat(e.target.value) || 0,
+                        })
+                      }
+                      className="w-16 px-2 py-1 bg-white border border-slate-200 rounded font-black text-emerald-700 text-xs"
+                    />
+                    <span className="text-slate-400">/ 單</span>
+                  </div>
+                </div>
+
+                {/* 规则 4: 街坊转介绍积分 */}
+                <div className="p-3.5 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="checkbox"
+                      id="chk-points"
+                      checked={configForm.enableReferralPoints ?? true}
+                      onChange={(e) =>
+                        setConfigForm({ ...configForm, enableReferralPoints: e.target.checked })
+                      }
+                      className="w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500 cursor-pointer"
+                    />
+                    <label htmlFor="chk-points" className="cursor-pointer">
+                      <div className="font-bold text-slate-900">
+                        4. 街坊轉介紹買菜積分 (Loyalty Veggie Points)
+                      </div>
+                      <div className="text-[11px] text-slate-400">
+                        {configForm.enableReferralPoints ? "✅ 已打勾啟用：推薦鄰里下單送積分換蔬菜" : "❌ 未打勾：全域停用轉介紹積分"}
+                      </div>
+                    </label>
+                  </div>
+                  <div className="flex items-center gap-1.5 font-bold">
+                    <input
+                      type="number"
+                      value={configForm.referralPointsPerOrder ?? 100}
+                      onChange={(e) =>
+                        setConfigForm({
+                          ...configForm,
+                          referralPointsPerOrder: parseInt(e.target.value) || 0,
+                        })
+                      }
+                      className="w-16 px-2 py-1 bg-white border border-slate-200 rounded font-black text-orange-600 text-xs"
+                    />
+                    <span className="text-slate-400">積分 (100分換1包菜)</span>
+                  </div>
+                </div>
+
+                {/* 规则 5: 免运费门槛 */}
+                <div className="p-3.5 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-between">
+                  <div className="font-bold text-slate-900">
+                    5. 自選免運費包郵門檻 (Free Shipping Threshold)
+                  </div>
+                  <div className="flex items-center gap-1.5 font-bold">
+                    <span>HK$</span>
+                    <input
+                      type="number"
+                      step="0.1"
+                      value={configForm.freeShippingThreshold ?? 18.9}
+                      onChange={(e) =>
+                        setConfigForm({
+                          ...configForm,
+                          freeShippingThreshold: parseFloat(e.target.value) || 0,
+                        })
+                      }
+                      className="w-16 px-2 py-1 bg-white border border-slate-200 rounded font-black text-slate-900 text-xs"
+                    />
+                    <span className="text-slate-400">包郵</span>
+                  </div>
+                </div>
+              </div>
+            </form>
+
+            {/* 卡片 2：单人个性化打勾列表（楼长自送 vs 平台统配） */}
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
+              <div>
+                <h3 className="font-black text-base text-slate-900 flex items-center gap-2">
+                  <Truck className="w-5 h-5 text-emerald-600" />
+                  <span>【單人個性化打勾列表】（個別樓長自行配送 vs 平台統配找人送）</span>
+                </h3>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  如您所設想：某位樓長自己每天下來拿菜送上樓，就在她那裡【打勾】，運力費歸她；如果是平台找人統配，就【不打勾】，運力費扣給送貨員牙仔
+                </p>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-slate-50 text-slate-500 font-bold border-b border-slate-200">
+                    <tr>
+                      <th className="py-2.5 px-3">樓長姓名</th>
+                      <th className="py-2.5 px-3">邀請碼</th>
+                      <th className="py-2.5 px-3">負責大廈</th>
+                      <th className="py-2.5 px-3">香港電話</th>
+                      <th className="py-2.5 px-3">【單人打勾】履約與配送方式</th>
+                      <th className="py-2.5 px-3 text-right">每單應得津貼合計</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {leaders.map((leader) => {
+                      const isSelf = leader.isSelfDelivery ?? false;
+                      const baseRate = configForm.leaderCommissionRate ?? 2.0;
+                      const runnerRate = configForm.runnerDeliveryFee ?? 2.0;
+                      const totalPerOrder = isSelf ? baseRate + runnerRate : baseRate;
+
+                      return (
+                        <tr key={leader.id} className="hover:bg-slate-50 transition">
+                          <td className="py-3 px-3 font-black text-slate-900">
+                            {leader.realName}
+                          </td>
+                          <td className="py-3 px-3 font-mono font-bold text-emerald-700">
+                            {leader.inviteCode}
+                          </td>
+                          <td className="py-3 px-3 font-bold text-slate-700">
+                            {leader.buildingName}
+                          </td>
+                          <td className="py-3 px-3 font-mono text-slate-500">
+                            {leader.hkPhone}
+                          </td>
+                          <td className="py-3 px-3">
+                            <label className="inline-flex items-center gap-2 cursor-pointer bg-slate-100 hover:bg-slate-200/80 px-3 py-1.5 rounded-xl border border-slate-200 transition">
+                              <input
+                                type="checkbox"
+                                checked={isSelf}
+                                onChange={() => handleToggleLeaderDelivery(leader.id, isSelf)}
+                                className="w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500 cursor-pointer"
+                              />
+                              <span className="font-bold text-[11px] text-slate-800">
+                                {isSelf ? (
+                                  <span className="text-emerald-700">
+                                    ☑️ 樓長自提並自行配送掛鐵閘 (獨享運力費)
+                                  </span>
+                                ) : (
+                                  <span className="text-slate-500">
+                                    ☐ 平台統一找人配送 (運力歸牙仔/步兵)
+                                  </span>
+                                )}
+                              </span>
+                            </label>
+                          </td>
+                          <td className="py-3 px-3 text-right">
+                            <span className="font-black text-sm text-emerald-700">
+                              HK$ {totalPerOrder.toFixed(1)}
+                            </span>
+                            <span className="text-[10px] text-slate-400 block">
+                              {isSelf ? `(服務$${baseRate} + 運力$${runnerRate})` : `(僅服務津貼$${baseRate})`}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">
-                  自選免運費包郵門檻 (HK$)
-                </label>
-                <input
-                  type="number"
-                  step="0.1"
-                  value={configForm.freeShippingThreshold || 18.9}
-                  onChange={(e) =>
-                    setConfigForm({
-                      ...configForm,
-                      freeShippingThreshold: parseFloat(e.target.value) || 0,
-                    })
-                  }
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold"
-                />
-                <span className="text-[10px] text-slate-400">純蔬菜實測 18.9 或 19.9</span>
-              </div>
-
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">
-                  步兵晨早掛閘運力費 (HK$/單)
-                </label>
-                <input
-                  type="number"
-                  step="0.1"
-                  value={configForm.runnerDeliveryFee || 2.0}
-                  onChange={(e) =>
-                    setConfigForm({
-                      ...configForm,
-                      runnerDeliveryFee: parseFloat(e.target.value) || 0,
-                    })
-                  }
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold"
-                />
-                <span className="text-[10px] text-slate-400">牙仔本邨上樓運力津貼</span>
-              </div>
-
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">
-                  愛心樓長直屬服務津貼 (HK$/單)
-                </label>
-                <input
-                  type="number"
-                  step="0.1"
-                  value={configForm.leaderCommissionRate || 2.0}
-                  onChange={(e) =>
-                    setConfigForm({
-                      ...configForm,
-                      leaderCommissionRate: parseFloat(e.target.value) || 0,
-                    })
-                  }
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold"
-                />
-                <span className="text-[10px] text-slate-400">樓長專屬現金津貼</span>
-              </div>
-
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">
-                  業務導師帶教津貼 (HK$/單)
-                </label>
-                <input
-                  type="number"
-                  step="0.1"
-                  value={configForm.mentorAllowanceRate || 0.5}
-                  onChange={(e) =>
-                    setConfigForm({
-                      ...configForm,
-                      mentorAllowanceRate: parseFloat(e.target.value) || 0,
-                    })
-                  }
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold"
-                />
-                <span className="text-[10px] text-slate-400">培養新樓長的二級帶教津貼</span>
-              </div>
-
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">
-                  街坊轉介紹贈送買菜積分 (分/單)
-                </label>
-                <input
-                  type="number"
-                  value={configForm.referralPointsPerOrder || 100}
-                  onChange={(e) =>
-                    setConfigForm({
-                      ...configForm,
-                      referralPointsPerOrder: parseInt(e.target.value) || 0,
-                    })
-                  }
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold"
-                />
-                <span className="text-[10px] text-slate-400">100分換1包500g青菜，零現金</span>
-              </div>
-            </div>
-
-            <div className="pt-3 border-t border-slate-100 flex justify-end">
-              <button
-                type="submit"
-                disabled={savingConfig}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-6 py-2.5 rounded-xl text-xs flex items-center gap-1.5 shadow active:scale-95 transition"
-              >
-                <Save className="w-4 h-4" />
-                <span>{savingConfig ? "保存中..." : "保存規則配置"}</span>
-              </button>
-            </div>
-          </form>
+          </div>
         )}
 
         {/* 模块 5: 品牌与交付约定配置 */}
@@ -775,7 +960,7 @@ export default function AdminPage() {
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white w-full max-w-md rounded-2xl p-6 space-y-4">
             <h3 className="font-black text-base text-slate-900">
-              將街坊升格為愛心樓長 (M2L 轉化)
+              手動將街坊升格為愛心樓長 (M2L 人工邀約後入庫)
             </h3>
             <form onSubmit={handlePromoteSubmit} className="space-y-3 text-xs">
               <div>

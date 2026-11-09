@@ -32,9 +32,15 @@ const INITIAL_CONFIG: AppConfig = {
   defaultWechatId: "hk_fresh_official",
   supportWhatsApp: "85291234567",
   freeShippingThreshold: 18.9,
-  runnerDeliveryFee: 2.0,
+
+  // 全局计算方式开关（打勾启用，不打勾则不计算）
+  enableLeaderCommission: true,
   leaderCommissionRate: 2.0,
+  enableMentorAllowance: true,
   mentorAllowanceRate: 0.5,
+  enableRunnerDelivery: true,
+  runnerDeliveryFee: 2.0,
+  enableReferralPoints: true,
   referralPointsPerOrder: 100,
 };
 
@@ -383,8 +389,13 @@ export const db = {
     return leaders.find((l) => l.hkPhone === clean) || null;
   },
 
-  getLeaderById(id: string): Leader | null {
-    return ensureDb().leaders.find((l) => l.id === id) || null;
+  updateLeader(id: string, updates: Partial<Leader>): Leader | null {
+    const store = ensureDb();
+    const idx = store.leaders.findIndex((l) => l.id === id);
+    if (idx < 0) return null;
+    store.leaders[idx] = { ...store.leaders[idx], ...updates };
+    writeDb(store);
+    return store.leaders[idx];
   },
 
   // 4. 客户与转介绍
@@ -566,17 +577,27 @@ export const db = {
     let mentorLeaderId: string | null = null;
     let directLeaderCommission = 0;
     let mentorAllowance = 0;
+    let runnerDeliveryFee = config.enableRunnerDelivery ? config.runnerDeliveryFee : 0;
     let referrerBonusPoints = 0;
 
-    // 1. 直属楼长分润
+    // 1. 直属楼长分润计算 (受全局打勾开关与单人自送打勾控制)
     if (directLeaderId && directLeaderId !== "SYSTEM_RUNNER") {
       const leader = store.leaders.find((l) => l.id === directLeaderId);
       if (leader && leader.status === "ACTIVE") {
-        directLeaderCommission = config.leaderCommissionRate;
+        // 全局打勾：是否计算楼长服务津贴
+        if (config.enableLeaderCommission) {
+          directLeaderCommission = config.leaderCommissionRate;
+        }
+
+        // 单人个性化打勾：若该楼长自行配送挂铁闸 (isSelfDelivery === true)，运力费直接归该楼长！
+        if (leader.isSelfDelivery && config.enableRunnerDelivery) {
+          directLeaderCommission += config.runnerDeliveryFee;
+        }
+
         leader.totalCommissionEarned = (leader.totalCommissionEarned || 0) + directLeaderCommission;
 
-        // 2. 带教导师津贴
-        if (leader.parentLeaderId) {
+        // 2. 带教导师津贴 (受全局打勾开关控制)
+        if (config.enableMentorAllowance && leader.parentLeaderId) {
           const mentor = store.leaders.find((m) => m.id === leader.parentLeaderId);
           if (mentor && mentor.status === "ACTIVE") {
             mentorLeaderId = mentor.id;
@@ -587,12 +608,11 @@ export const db = {
       }
     }
 
-    // 3. 转介绍街坊买菜积分返利（核心：买菜积分直接换新鲜蔬菜！）
+    // 3. 转介绍街坊买菜积分返利 (受全局打勾开关控制)
     const activeRefPhone = cust.referrerPhone || cleanRefPhone;
-    if (activeRefPhone && activeRefPhone !== cleanPhone) {
+    if (config.enableReferralPoints && activeRefPhone && activeRefPhone !== cleanPhone) {
       let referrer = store.customers.find((c) => c.hkPhone === activeRefPhone);
       if (!referrer) {
-        // 如果推荐人尚未下单过，初始化其积分账户
         referrer = {
           id: `cust-ref-${Date.now()}`,
           hkPhone: activeRefPhone,

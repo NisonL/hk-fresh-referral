@@ -27,6 +27,8 @@ export interface Leader {
   whatsAppGroupUrl: string; // WhatsApp 订菜群邀请链接
   parentLeaderId?: string | null; // 带教业务导师 ID（若有）
   status: "ACTIVE" | "INACTIVE";
+  isSelfDelivery?: boolean; // 【单人个性化打勾】：是否自行配送挂闸（打勾得运力费，不打勾则由平台统配）
+  calcMode?: "PER_ORDER" | "PER_CATTY"; // 计酬方式：按单 or 按斤
   totalCommissionEarned?: number; // 累计赚取津贴 (HK$)
   createdAt: string;
 }
@@ -99,10 +101,19 @@ export interface AppConfig {
   defaultWechatId: string;
   supportWhatsApp: string;
   freeShippingThreshold: number; // 满额包邮门槛 (默认 18.9 或 19.9)
-  runnerDeliveryFee: number;      // 牙仔挂闸运力费 (默认 2.00)
-  leaderCommissionRate: number;   // 楼长服务津贴 (默认 2.00)
-  mentorAllowanceRate: number;    // 导师带教津贴 (默认 0.50)
-  referralPointsPerOrder: number; // 推荐人每单赠送买菜积分 (默认 100)
+
+  // 【全局规则打勾开关】
+  enableLeaderCommission: boolean; // 是否启用楼长服务津贴 (打勾启用)
+  leaderCommissionRate: number;    // 楼长服务津贴 (默认 2.00)
+  
+  enableMentorAllowance: boolean;  // 是否启用业务导师带教津贴 (打勾启用)
+  mentorAllowanceRate: number;     // 导师带教津贴 (默认 0.50)
+
+  enableRunnerDelivery: boolean;   // 是否启用步兵晨早挂闸运力费 (打勾启用)
+  runnerDeliveryFee: number;       // 牙仔挂闸运力费 (默认 2.00)
+
+  enableReferralPoints: boolean;   // 是否启用街坊转介绍买菜积分 (打勾启用)
+  referralPointsPerOrder: number;  // 推荐人每单赠送买菜积分 (默认 100)
 }
 
 export interface RegisterPayload {
