@@ -25,12 +25,19 @@ import {
   Square,
   Truck,
   UserCheck,
+  RefreshCw,
+  ExternalLink,
+  Menu,
+  X,
+  Store,
+  Smartphone,
 } from "lucide-react";
 import { AppConfig, Product, Leader, Customer, Order } from "@/types";
 
 export default function AdminPage() {
   const [activeTab, setActiveTab] = useState<"grid" | "products" | "export" | "rules" | "brand">("grid");
   const [loading, setLoading] = useState(true);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // 全局数据状态
   const [stats, setStats] = useState<any>({});
@@ -168,119 +175,260 @@ export default function AdminPage() {
     }
   };
 
+  const navItems = [
+    { id: "grid", label: "網格大廈與 KOC 雷達", icon: MapPin, badge: stats.blankBuildingsCount ? `${stats.blankBuildingsCount}待孵化` : undefined },
+    { id: "products", label: "商品貨架動態管理", icon: ShoppingBag, badge: `${products.length}款` },
+    { id: "export", label: "清晨鐵閘配送單導出", icon: Download, badge: "雙模式" },
+    { id: "rules", label: "計酬規則與打勾開關", icon: Coins, badge: "雙層打勾" },
+    { id: "brand", label: "品牌與交付約定配置", icon: Settings },
+  ];
+
   return (
-    <div className="min-h-screen bg-slate-100 text-slate-800 pb-20">
-      {/* 顶部导航 */}
-      <header className="bg-slate-900 text-white sticky top-0 z-30 shadow-md">
-        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <Link
-              href="/"
-              className="text-xs text-slate-400 hover:text-white flex items-center gap-1"
-            >
-              ← 返回前台訂菜
-            </Link>
-            <span className="text-slate-600">|</span>
-            <div className="font-black text-base tracking-tight flex items-center gap-2">
-              <span className="text-emerald-400">供港優鮮</span>
-              <span className="text-xs bg-slate-800 border border-slate-700 px-2 py-0.5 rounded text-slate-300">
-                M 操盤總控台
-              </span>
+    <div className="min-h-screen bg-slate-100 text-slate-800 flex flex-col md:flex-row font-sans">
+      {/* ===================== PC 宽屏固定侧边栏 (Desktop Sidebar) ===================== */}
+      <aside className="hidden md:flex md:w-64 xl:w-72 bg-slate-900 text-white flex-col flex-shrink-0 min-h-screen sticky top-0 shadow-2xl z-40 border-r border-slate-800">
+        {/* 顶部品牌身份 */}
+        <div className="p-6 border-b border-slate-800">
+          <div className="flex items-center space-x-2.5">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-400 flex items-center justify-center font-black text-slate-950 text-base shadow-md">
+              優
+            </div>
+            <div>
+              <div className="font-black text-base tracking-tight text-white flex items-center gap-1.5">
+                <span>供港優鮮</span>
+                <span className="text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-1.5 py-0.2 rounded font-bold">
+                  SaaS
+                </span>
+              </div>
+              <div className="text-[11px] text-slate-400 font-medium">M 操盤總控後台 (寬屏版)</div>
             </div>
           </div>
 
-          <div className="text-xs text-slate-400 font-mono">
-            環境: 蘇屋邨 0 號樣板間 (純人工對賬·非全自動)
+          <div className="mt-3.5 bg-slate-800/80 rounded-xl p-2.5 text-[11px] text-slate-300 flex items-center gap-2 border border-slate-700/60">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse flex-shrink-0" />
+            <span className="truncate">深水埗蘇屋邨 0 號樣板間</span>
           </div>
         </div>
 
-        {/* 五大模块 Tab 切换栏 */}
-        <div className="max-w-6xl mx-auto px-4 flex space-x-1 border-t border-slate-800 overflow-x-auto">
-          {[
-            { id: "grid", label: "網格大廈與 KOC 裂變雷達", icon: MapPin },
-            { id: "products", label: "商品貨架動態管理", icon: ShoppingBag },
-            { id: "export", label: "清晨鐵閘配送單導出", icon: Download },
-            { id: "rules", label: "計酬規則與打勾開關", icon: Coins },
-            { id: "brand", label: "品牌與交付約定配置", icon: Settings },
-          ].map((tab) => {
-            const Icon = tab.icon;
+        {/* 导航菜单列表 */}
+        <nav className="flex-1 p-4 space-y-1.5 overflow-y-auto">
+          <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider px-3 mb-2">
+            核心運營模塊
+          </div>
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            const active = activeTab === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => setActiveTab(item.id as any)}
+                className={`w-full flex items-center justify-between px-3.5 py-3 rounded-xl text-xs font-bold transition-all text-left group ${
+                  active
+                    ? "bg-emerald-600 text-white shadow-lg shadow-emerald-900/30"
+                    : "text-slate-400 hover:text-white hover:bg-slate-800/60"
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <Icon className={`w-4 h-4 ${active ? "text-white" : "text-slate-400 group-hover:text-emerald-400"}`} />
+                  <span>{item.label}</span>
+                </div>
+                {item.badge && (
+                  <span
+                    className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
+                      active ? "bg-white/20 text-white" : "bg-slate-800 text-slate-400"
+                    }`}
+                  >
+                    {item.badge}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </nav>
+
+        {/* 底部快速通道 */}
+        <div className="p-4 border-t border-slate-800 bg-slate-950/40 space-y-2">
+          <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider px-2">
+            跨端快速直達
+          </div>
+          <Link
+            href="/"
+            target="_blank"
+            className="flex items-center justify-between px-3 py-2 rounded-xl text-xs text-slate-300 hover:text-white hover:bg-slate-800 transition"
+          >
+            <div className="flex items-center gap-2">
+              <Store className="w-3.5 h-3.5 text-emerald-400" />
+              <span>街坊自選訂菜商城</span>
+            </div>
+            <ExternalLink className="w-3 h-3 text-slate-500" />
+          </Link>
+
+          <Link
+            href="/leader"
+            target="_blank"
+            className="flex items-center justify-between px-3 py-2 rounded-xl text-xs text-slate-300 hover:text-white hover:bg-slate-800 transition"
+          >
+            <div className="flex items-center gap-2">
+              <Smartphone className="w-3.5 h-3.5 text-blue-400" />
+              <span>樓長移動駕駛艙</span>
+            </div>
+            <ExternalLink className="w-3 h-3 text-slate-500" />
+          </Link>
+
+          <div className="pt-2 text-[10px] text-slate-500 text-center font-mono">
+            V1.2 · 橫豎屏全自適應架構
+          </div>
+        </div>
+      </aside>
+
+      {/* ===================== 移动端顶部导航 (Mobile Header & Drawer) ===================== */}
+      <header className="md:hidden bg-slate-900 text-white sticky top-0 z-40 shadow-md">
+        <div className="px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <div className="w-7 h-7 rounded-lg bg-emerald-500 flex items-center justify-center font-black text-slate-950 text-xs">
+              優
+            </div>
+            <span className="font-black text-sm text-white">供港優鮮總控台</span>
+          </div>
+
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="p-1.5 rounded-lg bg-slate-800 text-slate-300 hover:text-white"
+          >
+            {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </button>
+        </div>
+
+        {/* 移动端横向滑动标签栏 */}
+        <div className="flex px-3 space-x-1.5 overflow-x-auto border-t border-slate-800 py-2">
+          {navItems.map((tab) => {
             const active = activeTab === tab.id;
             return (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id as any)}
-                className={`flex items-center gap-1.5 px-4 py-3 text-xs font-bold border-b-2 whitespace-nowrap transition ${
-                  active
-                    ? "border-emerald-400 text-emerald-400 bg-slate-800/50"
-                    : "border-transparent text-slate-400 hover:text-slate-200"
+                onClick={() => {
+                  setActiveTab(tab.id as any);
+                  setMobileMenuOpen(false);
+                }}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition ${
+                  active ? "bg-emerald-600 text-white" : "bg-slate-800 text-slate-400"
                 }`}
               >
-                <Icon className="w-3.5 h-3.5" />
-                <span>{tab.label}</span>
+                {tab.label}
               </button>
             );
           })}
         </div>
+
+        {/* 移动端展开菜单抽屉 */}
+        {mobileMenuOpen && (
+          <div className="p-4 bg-slate-950 border-t border-slate-800 space-y-2">
+            <Link
+              href="/"
+              className="block p-2.5 bg-slate-900 rounded-xl text-xs font-bold text-emerald-400"
+            >
+              🛒 前往街坊訂菜首頁
+            </Link>
+            <Link
+              href="/leader"
+              className="block p-2.5 bg-slate-900 rounded-xl text-xs font-bold text-blue-400"
+            >
+              📱 前往樓長移動駕駛艙
+            </Link>
+          </div>
+        )}
       </header>
 
-      {/* 主体工作区 */}
-      <div className="max-w-6xl mx-auto px-4 py-6">
-        {/* 全盘核心指标看板 */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3.5 mb-6">
-          <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
-            <span className="text-xs text-slate-400 font-bold">歷史累計 GMV</span>
-            <div className="text-xl font-black text-slate-900 mt-1">
-              HK$ {stats.totalGmv || "0.00"}
+      {/* ===================== 主体宽屏工作区 (Right Main Content Area) ===================== */}
+      <main className="flex-1 min-w-0 p-4 md:p-8 xl:p-10 max-w-7xl mx-auto w-full">
+        {/* 顶部标题与操作栏 */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-6 mb-6 border-b border-slate-200 gap-3">
+          <div>
+            <div className="flex items-center gap-2">
+              <h1 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight">
+                {navItems.find((n) => n.id === activeTab)?.label}
+              </h1>
+              <span className="hidden sm:inline-block text-[11px] font-bold bg-emerald-100 text-emerald-800 px-2.5 py-0.5 rounded-full">
+                蘇屋邨 14 座大廈實時對接中
+              </span>
             </div>
-            <span className="text-[10px] text-emerald-600 font-bold">100% 蔬菜真實訂單</span>
+            <p className="text-xs text-slate-500 mt-1">
+              數據實時同步 · 嚴守香港 Cap 617 傳銷與房屋署 C9 規範 · 人工對賬安全閉環
+            </p>
           </div>
 
-          <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
-            <span className="text-xs text-slate-400 font-bold">累計下單筆數</span>
-            <div className="text-xl font-black text-slate-900 mt-1">
-              {stats.totalOrders || 0} 筆
-            </div>
-            <span className="text-[10px] text-slate-400">平均客單價 HK$ 19.9</span>
-          </div>
-
-          <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
-            <span className="text-xs text-slate-400 font-bold">在冊買菜戶數</span>
-            <div className="text-xl font-black text-slate-900 mt-1">
-              {stats.totalCustomers || 0} 戶
-            </div>
-            <span className="text-[10px] text-slate-400">蘇屋邨在冊房號</span>
-          </div>
-
-          <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
-            <span className="text-xs text-slate-400 font-bold">在席活躍樓長</span>
-            <div className="text-xl font-black text-emerald-600 mt-1">
-              {stats.totalLeaders || 0} 位
-            </div>
-            <span className="text-[10px] text-slate-400">華姐(牡丹樓)等</span>
-          </div>
-
-          <div className="bg-white p-4 rounded-2xl border border-amber-200 bg-amber-50/40 shadow-sm col-span-2 md:col-span-1">
-            <span className="text-xs text-amber-800 font-bold">空白網點大廈 (待孵化)</span>
-            <div className="text-xl font-black text-amber-600 mt-1">
-              {stats.blankBuildingsCount || 0} 座
-            </div>
-            <span className="text-[10px] text-amber-700 font-bold">有訂單但無樓長</span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={fetchAdminData}
+              disabled={loading}
+              className="bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-bold px-3 py-2 rounded-xl text-xs flex items-center gap-1.5 shadow-sm active:scale-95 transition"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 text-slate-500 ${loading ? "animate-spin" : ""}`} />
+              <span>刷新實時數據</span>
+            </button>
           </div>
         </div>
 
-        {/* 模块 1: 网格大厦穿透与 KOC 裂变雷达 */}
+        {/* 宽屏五大多维核心指标看板 (PC 5列展开，移动端2列) */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3.5 md:gap-4 mb-8">
+          <div className="bg-white p-4 md:p-5 rounded-2xl border border-slate-200 shadow-sm hover:border-emerald-300 transition">
+            <span className="text-xs text-slate-400 font-bold block">歷史累計 GMV</span>
+            <div className="text-xl md:text-2xl font-black text-slate-900 mt-1.5">
+              HK$ {stats.totalGmv || "0.00"}
+            </div>
+            <span className="text-[10px] text-emerald-600 font-bold block mt-1">
+              100% 蔬菜真實訂單
+            </span>
+          </div>
+
+          <div className="bg-white p-4 md:p-5 rounded-2xl border border-slate-200 shadow-sm hover:border-emerald-300 transition">
+            <span className="text-xs text-slate-400 font-bold block">累計下單筆數</span>
+            <div className="text-xl md:text-2xl font-black text-slate-900 mt-1.5">
+              {stats.totalOrders || 0} 筆
+            </div>
+            <span className="text-[10px] text-slate-400 block mt-1">客單價約 HK$ 19.9</span>
+          </div>
+
+          <div className="bg-white p-4 md:p-5 rounded-2xl border border-slate-200 shadow-sm hover:border-emerald-300 transition">
+            <span className="text-xs text-slate-400 font-bold block">在冊買菜戶數</span>
+            <div className="text-xl md:text-2xl font-black text-slate-900 mt-1.5">
+              {stats.totalCustomers || 0} 戶
+            </div>
+            <span className="text-[10px] text-slate-400 block mt-1">蘇屋邨在冊房號</span>
+          </div>
+
+          <div className="bg-white p-4 md:p-5 rounded-2xl border border-slate-200 shadow-sm hover:border-emerald-300 transition">
+            <span className="text-xs text-slate-400 font-bold block">在席活躍樓長</span>
+            <div className="text-xl md:text-2xl font-black text-emerald-600 mt-1.5">
+              {stats.totalLeaders || 0} 位
+            </div>
+            <span className="text-[10px] text-slate-400 block mt-1">華姐 (牡丹樓) 等</span>
+          </div>
+
+          <div className="bg-white p-4 md:p-5 rounded-2xl border border-amber-200 bg-amber-50/50 shadow-sm col-span-2 md:col-span-1">
+            <span className="text-xs text-amber-800 font-bold block">空白網點 (待孵化)</span>
+            <div className="text-xl md:text-2xl font-black text-amber-600 mt-1.5">
+              {stats.blankBuildingsCount || 0} 座
+            </div>
+            <span className="text-[10px] text-amber-700 font-bold block mt-1">
+              有訂單但暫無樓長
+            </span>
+          </div>
+        </div>
+
+        {/* ===================== 模块 1: 网格大厦穿透与 KOC 裂变雷达 ===================== */}
         {activeTab === "grid" && (
-          <div className="space-y-6">
-            {/* 表 1：全邨 14 座大厦网格渗透看板 */}
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
-              <div className="flex items-center justify-between mb-4">
+          <div className="space-y-8">
+            {/* 表 1：全邨 14 座大厦网格穿透看板 */}
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 md:p-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-2">
                 <div>
-                  <h3 className="font-black text-base text-slate-900 flex items-center gap-2">
+                  <h3 className="font-black text-base md:text-lg text-slate-900 flex items-center gap-2">
                     <Building2 className="w-5 h-5 text-emerald-600" />
                     <span>深水埗蘇屋邨 14 座大廈網格滲透穿透看板</span>
                   </h3>
                   <p className="text-xs text-slate-400 mt-0.5">
-                    監控各座大廈覆蓋狀態；挖掘空白大廈 TOP 買家，由人工定向觸達，絕非冷冰冰自動升級
+                    實時穿透每座大廈訂單與買菜戶；自動捕獲空白大廈 TOP 買家，由管理人員人工定向邀約，絕無冷冰冰系統自動升級
                   </p>
                 </div>
               </div>
@@ -289,49 +437,49 @@ export default function AdminPage() {
                 <table className="w-full text-left text-xs">
                   <thead className="bg-slate-50 text-slate-500 font-bold border-b border-slate-200">
                     <tr>
-                      <th className="py-2.5 px-3">大廈座號</th>
-                      <th className="py-2.5 px-3">大廈名稱</th>
-                      <th className="py-2.5 px-3">樓長覆蓋狀態</th>
-                      <th className="py-2.5 px-3">在冊買菜戶</th>
-                      <th className="py-2.5 px-3">累計訂單</th>
-                      <th className="py-2.5 px-3">⭐ 核心高潛種子街坊 (發掘目標)</th>
-                      <th className="py-2.5 px-3 text-right">人工邀約操作</th>
+                      <th className="py-3 px-4">大廈座號</th>
+                      <th className="py-3 px-4">大廈名稱</th>
+                      <th className="py-3 px-4">樓長覆蓋狀態</th>
+                      <th className="py-3 px-4">在冊買菜戶</th>
+                      <th className="py-3 px-4">累計訂單</th>
+                      <th className="py-3 px-4">⭐ 核心高潛種子街坊 (發掘目標)</th>
+                      <th className="py-3 px-4 text-right">人工邀約操作</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
                     {buildingStats.map((bldg) => (
                       <tr key={bldg.buildingId} className="hover:bg-slate-50 transition">
-                        <td className="py-3 px-3 font-mono font-bold text-slate-700">
+                        <td className="py-3.5 px-4 font-mono font-bold text-slate-700">
                           {bldg.blockCode}
                         </td>
-                        <td className="py-3 px-3 font-black text-slate-900">
+                        <td className="py-3.5 px-4 font-black text-slate-900 text-sm">
                           {bldg.buildingName}
                         </td>
-                        <td className="py-3 px-3">
+                        <td className="py-3.5 px-4">
                           {bldg.leader ? (
-                            <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full font-bold text-[11px]">
+                            <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-1 rounded-full font-bold text-[11px]">
                               🟢 {bldg.leader.realName} ({bldg.leader.inviteCode})
                             </span>
                           ) : bldg.customerCount > 0 ? (
-                            <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-full font-bold text-[11px]">
+                            <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-700 border border-amber-200 px-2.5 py-1 rounded-full font-bold text-[11px]">
                               🟡 空白網點 (牙仔代跑)
                             </span>
                           ) : (
                             <span className="text-slate-300 font-medium">⚪ 未破冰 (0戶)</span>
                           )}
                         </td>
-                        <td className="py-3 px-3 font-bold">{bldg.customerCount} 戶</td>
-                        <td className="py-3 px-3 font-bold">{bldg.orderCount} 筆</td>
-                        <td className="py-3 px-3">
+                        <td className="py-3.5 px-4 font-bold text-slate-800">{bldg.customerCount} 戶</td>
+                        <td className="py-3.5 px-4 font-bold text-slate-800">{bldg.orderCount} 筆</td>
+                        <td className="py-3.5 px-4">
                           {bldg.starProspect ? (
-                            <div className="flex items-center gap-1.5">
-                              <span className="bg-amber-100 text-amber-900 font-black px-1.5 py-0.5 rounded text-[10px]">
+                            <div className="flex items-center gap-2">
+                              <span className="bg-amber-100 text-amber-900 font-black px-2 py-0.5 rounded text-[10px]">
                                 ⭐ TOP1 買家
                               </span>
                               <span className="font-bold text-slate-800">
                                 {bldg.starProspect.realName} ({bldg.starProspect.flatNo})
                               </span>
-                              <span className="text-slate-400 text-[10px]">
+                              <span className="text-slate-400 text-[11px]">
                                 已訂 {bldg.starProspect.ordersCount} 次
                               </span>
                             </div>
@@ -339,7 +487,7 @@ export default function AdminPage() {
                             <span className="text-slate-300">--</span>
                           )}
                         </td>
-                        <td className="py-3 px-3 text-right space-x-1.5">
+                        <td className="py-3.5 px-4 text-right space-x-2">
                           {bldg.starProspect && (
                             <>
                               <button
@@ -347,14 +495,14 @@ export default function AdminPage() {
                                   const text = generateInviteMessage(bldg.starProspect, bldg.buildingName);
                                   handleCopyText(text);
                                 }}
-                                className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-2.5 py-1 rounded-lg text-[11px] transition inline-flex items-center gap-1"
+                                className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-3 py-1.5 rounded-xl text-xs transition inline-flex items-center gap-1 shadow-sm"
                               >
                                 {copiedText.includes(bldg.starProspect.realName) ? (
-                                  <Check className="w-3 h-3 text-emerald-600" />
+                                  <Check className="w-3.5 h-3.5 text-emerald-600" />
                                 ) : (
-                                  <Copy className="w-3 h-3" />
+                                  <Copy className="w-3.5 h-3.5" />
                                 )}
-                                <span>複製邀約文案</span>
+                                <span>複製邀約</span>
                               </button>
 
                               <button
@@ -367,7 +515,7 @@ export default function AdminPage() {
                                   });
                                   setPromoteModalOpen(true);
                                 }}
-                                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-2.5 py-1 rounded-lg text-[11px] transition"
+                                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3 py-1.5 rounded-xl text-xs transition shadow-sm"
                               >
                                 手動升為樓長
                               </button>
@@ -382,15 +530,15 @@ export default function AdminPage() {
             </div>
 
             {/* 表 2：全邨街坊 KOC 裂变达人雷达排行榜 */}
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
-              <div className="flex items-center justify-between mb-4">
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 md:p-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-2">
                 <div>
-                  <h3 className="font-black text-base text-slate-900 flex items-center gap-2">
+                  <h3 className="font-black text-base md:text-lg text-slate-900 flex items-center gap-2">
                     <Gift className="w-5 h-5 text-orange-500" />
                     <span>街坊轉介紹 KOC 裂變達人雷達（成功推薦戶數 $\ge 1$）</span>
                   </h3>
                   <p className="text-xs text-slate-400 mt-0.5">
-                    前台只以“純送積分換青菜”吸引街坊拉鄰里；後台雷達抓取已拉 3~5 人的達人，管理員面談後手動邀約
+                    前台只以“純送積分換青菜”吸引街坊拉鄰里；後台雷達抓取拉滿 3~5 人的達人，管理員面談後手動邀約入庫
                   </p>
                 </div>
               </div>
@@ -399,49 +547,49 @@ export default function AdminPage() {
                 <table className="w-full text-left text-xs">
                   <thead className="bg-slate-50 text-slate-500 font-bold border-b border-slate-200">
                     <tr>
-                      <th className="py-2.5 px-3">街坊稱呼</th>
-                      <th className="py-2.5 px-3">大廈門牌</th>
-                      <th className="py-2.5 px-3">香港電話</th>
-                      <th className="py-2.5 px-3">成功推薦戶數</th>
-                      <th className="py-2.5 px-3">帶動總單量</th>
-                      <th className="py-2.5 px-3">買菜積分餘額</th>
-                      <th className="py-2.5 px-3">系統高潛評級</th>
-                      <th className="py-2.5 px-3 text-right">人工邀約操作</th>
+                      <th className="py-3 px-4">街坊稱呼</th>
+                      <th className="py-3 px-4">大廈門牌</th>
+                      <th className="py-3 px-4">香港電話</th>
+                      <th className="py-3 px-4">成功推薦戶數</th>
+                      <th className="py-3 px-4">帶動總單量</th>
+                      <th className="py-3 px-4">買菜積分餘額</th>
+                      <th className="py-3 px-4">系統高潛評級</th>
+                      <th className="py-3 px-4 text-right">人工邀約操作</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
                     {kocLeaderboard.length === 0 ? (
                       <tr>
-                        <td colSpan={8} className="py-8 text-center text-slate-400 text-xs">
-                          暫無轉介紹數據，街坊在前端下單或點擊“推薦街坊得青菜”即可累積
+                        <td colSpan={8} className="py-10 text-center text-slate-400 text-xs">
+                          暫無轉介紹數據，街坊在前端點擊“推薦街坊得青菜”即可累積
                         </td>
                       </tr>
                     ) : (
                       kocLeaderboard.map((koc, idx) => (
                         <tr key={koc.phone} className="hover:bg-slate-50 transition">
-                          <td className="py-3 px-3 font-black text-slate-900">
+                          <td className="py-3.5 px-4 font-black text-slate-900 text-sm">
                             {idx === 0 && "🥇 "}
                             {idx === 1 && "🥈 "}
                             {idx === 2 && "🥉 "}
                             {koc.realName}
                           </td>
-                          <td className="py-3 px-3 text-slate-600">
+                          <td className="py-3.5 px-4 text-slate-600 font-medium">
                             {koc.buildingName} {koc.flatNo}
                           </td>
-                          <td className="py-3 px-3 font-mono font-bold text-slate-700">
+                          <td className="py-3.5 px-4 font-mono font-bold text-slate-700">
                             {koc.phone}
                           </td>
-                          <td className="py-3 px-3 font-black text-orange-600">
+                          <td className="py-3.5 px-4 font-black text-orange-600 text-sm">
                             {koc.refereeCount} 戶
                           </td>
-                          <td className="py-3 px-3 font-bold">{koc.totalRefereeOrders} 單</td>
-                          <td className="py-3 px-3 font-mono font-bold text-emerald-700">
+                          <td className="py-3.5 px-4 font-bold text-slate-800">{koc.totalRefereeOrders} 單</td>
+                          <td className="py-3.5 px-4 font-mono font-bold text-emerald-700">
                             {koc.pointsBalance} 分
                           </td>
-                          <td className="py-3 px-3 font-bold text-amber-700">
+                          <td className="py-3.5 px-4 font-bold text-amber-700">
                             {koc.rating}
                           </td>
-                          <td className="py-3 px-3 text-right">
+                          <td className="py-3.5 px-4 text-right">
                             {koc.isAlreadyLeader ? (
                               <span className="text-emerald-600 font-bold">已是在席樓長</span>
                             ) : (
@@ -450,9 +598,9 @@ export default function AdminPage() {
                                   const text = generateInviteMessage(koc, koc.buildingName);
                                   handleCopyText(text);
                                 }}
-                                className="bg-orange-50 hover:bg-orange-100 text-orange-700 border border-orange-200 font-bold px-2.5 py-1 rounded-lg text-[11px] transition inline-flex items-center gap-1"
+                                className="bg-orange-50 hover:bg-orange-100 text-orange-700 border border-orange-200 font-bold px-3 py-1.5 rounded-xl text-xs transition inline-flex items-center gap-1 shadow-sm"
                               >
-                                <Copy className="w-3 h-3" />
+                                <Copy className="w-3.5 h-3.5" />
                                 <span>複製邀約</span>
                               </button>
                             )}
@@ -467,46 +615,61 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* 模块 2: 商品与货架管理 */}
+        {/* ===================== 模块 2: 商品与货架管理 (宽屏多列网格) ===================== */}
         {activeTab === "products" && (
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-4">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-6">
             <div>
-              <h3 className="font-black text-base text-slate-900 flex items-center gap-2">
+              <h3 className="font-black text-base md:text-lg text-slate-900 flex items-center gap-2">
                 <ShoppingBag className="w-5 h-5 text-emerald-600" />
-                <span>今日 8 大主力自選蔬菜貨架管理</span>
+                <span>今日 8 大主力自選蔬菜貨架管理 (PC 寬屏多列陳列)</span>
               </h3>
               <p className="text-xs text-slate-400 mt-0.5">
                 單品均為足 500g 精選保鮮裝，對標旺角街市打 7 折，毛利率堅守在 40% - 58%
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
               {products.map((p) => (
                 <div
                   key={p.id}
-                  className="p-4 rounded-xl border border-slate-200 bg-slate-50 flex items-center gap-3.5"
+                  className="p-4 rounded-2xl border border-slate-200 bg-slate-50 flex flex-col justify-between hover:border-emerald-300 transition"
                 >
-                  <img
-                    src={p.imageUrl}
-                    alt={p.nameZh}
-                    className="w-16 h-16 rounded-xl object-cover bg-white"
-                  />
-                  <div className="flex-1 min-w-0">
-                    <h4 className="font-bold text-slate-900 text-sm truncate">{p.nameZh}</h4>
-                    <p className="text-xs text-slate-400 truncate">{p.subTitle}</p>
-                    <div className="flex items-center gap-2 mt-2">
-                      <span className="text-xs text-slate-500 font-bold">售價: HK$</span>
-                      <input
-                        type="number"
-                        step="0.1"
-                        value={p.priceHkd}
-                        onChange={(e) =>
-                          handleUpdateProductPrice(p.id, parseFloat(e.target.value) || 0)
-                        }
-                        className="w-20 px-2 py-1 bg-white border border-slate-200 rounded font-black text-rose-600 text-xs"
-                      />
-                      <span className="text-xs text-slate-400">
-                        (對標街市 HK$ {p.marketPriceHkd})
+                  <div className="flex items-center gap-3.5 mb-3">
+                    <img
+                      src={p.imageUrl}
+                      alt={p.nameZh}
+                      className="w-16 h-16 rounded-xl object-cover bg-white shadow-sm flex-shrink-0"
+                    />
+                    <div className="min-w-0">
+                      <h4 className="font-bold text-slate-900 text-sm truncate">{p.nameZh}</h4>
+                      <p className="text-[11px] text-slate-400 truncate mt-0.5">{p.subTitle}</p>
+                      <span className="inline-block mt-1 text-[10px] bg-emerald-100 text-emerald-800 font-bold px-1.5 py-0.2 rounded">
+                        {p.netWeight} 足斤裝
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="pt-3 border-t border-slate-200/80 flex items-center justify-between">
+                    <div>
+                      <span className="text-[11px] text-slate-400 block">零售特惠價</span>
+                      <div className="flex items-center gap-1">
+                        <span className="font-bold text-slate-700 text-xs">HK$</span>
+                        <input
+                          type="number"
+                          step="0.1"
+                          value={p.priceHkd}
+                          onChange={(e) =>
+                            handleUpdateProductPrice(p.id, parseFloat(e.target.value) || 0)
+                          }
+                          className="w-18 px-2 py-1 bg-white border border-slate-300 rounded-lg font-black text-rose-600 text-sm focus:outline-none focus:border-emerald-500"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="text-right">
+                      <span className="text-[10px] text-slate-400 block">旺角街市參考</span>
+                      <span className="text-xs text-slate-400 line-through">
+                        HK$ {p.marketPriceHkd}
                       </span>
                     </div>
                   </div>
@@ -516,22 +679,22 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* 模块 3: 清晨铁闸配送单导出 (2 种模式) */}
+        {/* ===================== 模块 3: 清晨铁闸配送单导出 (双模式) ===================== */}
         {activeTab === "export" && (
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-6">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 md:p-8 space-y-6">
             <div>
-              <h3 className="font-black text-base text-slate-900 flex items-center gap-2">
+              <h3 className="font-black text-base md:text-lg text-slate-900 flex items-center gap-2">
                 <Download className="w-5 h-5 text-emerald-600" />
-                <span>清晨 21:30 截單配貨與導出中樞</span>
+                <span>清晨 21:30 截單配貨與導出中樞 (PC 寬屏工作台)</span>
               </h3>
               <p className="text-xs text-slate-400 mt-0.5">
                 支持兩種對接導出方式：按大廈座號房號掃樓掛閘，或按樓長匯總大宗自提交接
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              <div className="p-5 rounded-2xl border border-emerald-200 bg-emerald-50/50 space-y-3">
-                <div className="text-sm font-black text-emerald-950 flex items-center gap-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="p-6 rounded-2xl border border-emerald-200 bg-emerald-50/50 space-y-4">
+                <div className="text-base font-black text-emerald-950 flex items-center gap-2">
                   <span>📥 模式一：晨早防盜鐵閘掛袋掃樓清冊</span>
                 </div>
                 <p className="text-xs text-emerald-800 leading-relaxed">
@@ -540,15 +703,15 @@ export default function AdminPage() {
                 <a
                   href="/api/admin/export?mode=gate"
                   target="_blank"
-                  className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2.5 rounded-xl text-xs shadow transition active:scale-95"
+                  className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-5 py-3 rounded-xl text-xs shadow-md transition active:scale-95"
                 >
                   <Download className="w-4 h-4" />
                   <span>下載【晨早鐵閘掛袋掃樓配送單 (CSV)】</span>
                 </a>
               </div>
 
-              <div className="p-5 rounded-2xl border border-blue-200 bg-blue-50/50 space-y-3">
-                <div className="text-sm font-black text-blue-950 flex items-center gap-2">
+              <div className="p-6 rounded-2xl border border-blue-200 bg-blue-50/50 space-y-4">
+                <div className="text-base font-black text-blue-950 flex items-center gap-2">
                   <span>📥 模式二：按樓長大宗自提/交接清冊</span>
                 </div>
                 <p className="text-xs text-blue-800 leading-relaxed">
@@ -557,7 +720,7 @@ export default function AdminPage() {
                 <a
                   href="/api/admin/export?mode=leader"
                   target="_blank"
-                  className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold px-4 py-2.5 rounded-xl text-xs shadow transition active:scale-95"
+                  className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold px-5 py-3 rounded-xl text-xs shadow-md transition active:scale-95"
                 >
                   <Download className="w-4 h-4" />
                   <span>下載【樓長自提交接與津貼對賬單 (CSV)】</span>
@@ -567,17 +730,17 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* 模块 4: 规则引擎与计价打勾控制 */}
+        {/* ===================== 模块 4: 规则引擎与计价打勾控制 ===================== */}
         {activeTab === "rules" && (
-          <div className="space-y-6">
+          <div className="space-y-8">
             {/* 卡片 1：全局计算方式打勾开关 */}
             <form
               onSubmit={handleSaveConfig}
-              className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-5"
+              className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 md:p-8 space-y-6"
             >
-              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-100 gap-3">
                 <div>
-                  <h3 className="font-black text-base text-slate-900 flex items-center gap-2">
+                  <h3 className="font-black text-base md:text-lg text-slate-900 flex items-center gap-2">
                     <CheckSquare className="w-5 h-5 text-emerald-600" />
                     <span>【全局計算方式打勾開關】（打勾了系統才有，不打勾就沒有）</span>
                   </h3>
@@ -588,16 +751,16 @@ export default function AdminPage() {
                 <button
                   type="submit"
                   disabled={savingConfig}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-5 py-2 rounded-xl text-xs flex items-center gap-1.5 shadow active:scale-95 transition"
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-6 py-2.5 rounded-xl text-xs flex items-center gap-2 shadow-md active:scale-95 transition"
                 >
                   <Save className="w-4 h-4" />
                   <span>{savingConfig ? "保存中..." : "保存全局打勾開關"}</span>
                 </button>
               </div>
 
-              <div className="space-y-3.5 text-xs">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 text-xs">
                 {/* 规则 1: 楼长服务津贴 */}
-                <div className="p-3.5 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-between">
+                <div className="p-4 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <input
                       type="checkbox"
@@ -606,11 +769,11 @@ export default function AdminPage() {
                       onChange={(e) =>
                         setConfigForm({ ...configForm, enableLeaderCommission: e.target.checked })
                       }
-                      className="w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500 cursor-pointer"
+                      className="w-5 h-5 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500 cursor-pointer"
                     />
                     <label htmlFor="chk-leader" className="cursor-pointer">
-                      <div className="font-bold text-slate-900">
-                        1. 愛心樓長直屬服務津貼 (Leader Commission)
+                      <div className="font-bold text-slate-900 text-sm">
+                        1. 愛心樓長直屬服務津貼
                       </div>
                       <div className="text-[11px] text-slate-400">
                         {configForm.enableLeaderCommission ? "✅ 已打勾啟用：每筆訂單發放" : "❌ 未打勾：全域停用樓長津貼"}
@@ -629,14 +792,14 @@ export default function AdminPage() {
                           leaderCommissionRate: parseFloat(e.target.value) || 0,
                         })
                       }
-                      className="w-16 px-2 py-1 bg-white border border-slate-200 rounded font-black text-emerald-700 text-xs"
+                      className="w-16 px-2 py-1.5 bg-white border border-slate-200 rounded-lg font-black text-emerald-700 text-xs"
                     />
                     <span className="text-slate-400">/ 單</span>
                   </div>
                 </div>
 
                 {/* 规则 2: 导师带教津贴 */}
-                <div className="p-3.5 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-between">
+                <div className="p-4 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <input
                       type="checkbox"
@@ -645,14 +808,14 @@ export default function AdminPage() {
                       onChange={(e) =>
                         setConfigForm({ ...configForm, enableMentorAllowance: e.target.checked })
                       }
-                      className="w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500 cursor-pointer"
+                      className="w-5 h-5 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500 cursor-pointer"
                     />
                     <label htmlFor="chk-mentor" className="cursor-pointer">
-                      <div className="font-bold text-slate-900">
-                        2. 業務導師帶教津貼 (Mentor Allowance · Cap 617 二級)
+                      <div className="font-bold text-slate-900 text-sm">
+                        2. 業務導師帶教津貼 (Cap 617 二級)
                       </div>
                       <div className="text-[11px] text-slate-400">
-                        {configForm.enableMentorAllowance ? "✅ 已打勾啟用：老樓長培養新樓長享受帶教津貼" : "❌ 未打勾：全域停用導師津貼"}
+                        {configForm.enableMentorAllowance ? "✅ 已打勾啟用：老樓長享受二級帶教津貼" : "❌ 未打勾：全域停用導師津貼"}
                       </div>
                     </label>
                   </div>
@@ -668,14 +831,14 @@ export default function AdminPage() {
                           mentorAllowanceRate: parseFloat(e.target.value) || 0,
                         })
                       }
-                      className="w-16 px-2 py-1 bg-white border border-slate-200 rounded font-black text-emerald-700 text-xs"
+                      className="w-16 px-2 py-1.5 bg-white border border-slate-200 rounded-lg font-black text-emerald-700 text-xs"
                     />
                     <span className="text-slate-400">/ 單</span>
                   </div>
                 </div>
 
                 {/* 规则 3: 步兵挂闸运力费 */}
-                <div className="p-3.5 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-between">
+                <div className="p-4 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <input
                       type="checkbox"
@@ -684,11 +847,11 @@ export default function AdminPage() {
                       onChange={(e) =>
                         setConfigForm({ ...configForm, enableRunnerDelivery: e.target.checked })
                       }
-                      className="w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500 cursor-pointer"
+                      className="w-5 h-5 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500 cursor-pointer"
                     />
                     <label htmlFor="chk-runner" className="cursor-pointer">
-                      <div className="font-bold text-slate-900">
-                        3. 步兵晨早掛閘運力費 (Runner Delivery Fee)
+                      <div className="font-bold text-slate-900 text-sm">
+                        3. 步兵晨早掛閘運力費
                       </div>
                       <div className="text-[11px] text-slate-400">
                         {configForm.enableRunnerDelivery ? "✅ 已打勾啟用：每單支付運力津貼" : "❌ 未打勾：全域停用運力支出"}
@@ -707,14 +870,14 @@ export default function AdminPage() {
                           runnerDeliveryFee: parseFloat(e.target.value) || 0,
                         })
                       }
-                      className="w-16 px-2 py-1 bg-white border border-slate-200 rounded font-black text-emerald-700 text-xs"
+                      className="w-16 px-2 py-1.5 bg-white border border-slate-200 rounded-lg font-black text-emerald-700 text-xs"
                     />
                     <span className="text-slate-400">/ 單</span>
                   </div>
                 </div>
 
                 {/* 规则 4: 街坊转介绍积分 */}
-                <div className="p-3.5 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-between">
+                <div className="p-4 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <input
                       type="checkbox"
@@ -723,14 +886,14 @@ export default function AdminPage() {
                       onChange={(e) =>
                         setConfigForm({ ...configForm, enableReferralPoints: e.target.checked })
                       }
-                      className="w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500 cursor-pointer"
+                      className="w-5 h-5 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500 cursor-pointer"
                     />
                     <label htmlFor="chk-points" className="cursor-pointer">
-                      <div className="font-bold text-slate-900">
-                        4. 街坊轉介紹買菜積分 (Loyalty Veggie Points)
+                      <div className="font-bold text-slate-900 text-sm">
+                        4. 街坊轉介紹買菜積分
                       </div>
                       <div className="text-[11px] text-slate-400">
-                        {configForm.enableReferralPoints ? "✅ 已打勾啟用：推薦鄰里下單送積分換蔬菜" : "❌ 未打勾：全域停用轉介紹積分"}
+                        {configForm.enableReferralPoints ? "✅ 已打勾啟用：推薦鄰里送積分換菜" : "❌ 未打勾：全域停用轉介紹積分"}
                       </div>
                     </label>
                   </div>
@@ -744,16 +907,21 @@ export default function AdminPage() {
                           referralPointsPerOrder: parseInt(e.target.value) || 0,
                         })
                       }
-                      className="w-16 px-2 py-1 bg-white border border-slate-200 rounded font-black text-orange-600 text-xs"
+                      className="w-16 px-2 py-1.5 bg-white border border-slate-200 rounded-lg font-black text-orange-600 text-xs"
                     />
                     <span className="text-slate-400">積分 (100分換1包菜)</span>
                   </div>
                 </div>
 
                 {/* 规则 5: 免运费门槛 */}
-                <div className="p-3.5 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-between">
-                  <div className="font-bold text-slate-900">
-                    5. 自選免運費包郵門檻 (Free Shipping Threshold)
+                <div className="p-4 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-between lg:col-span-2">
+                  <div>
+                    <div className="font-bold text-slate-900 text-sm">
+                      5. 自選免運費包郵門檻 (Free Shipping Threshold)
+                    </div>
+                    <div className="text-[11px] text-slate-400">
+                      純蔬菜階段實收滿額即免運費晨早掛閘
+                    </div>
                   </div>
                   <div className="flex items-center gap-1.5 font-bold">
                     <span>HK$</span>
@@ -767,18 +935,18 @@ export default function AdminPage() {
                           freeShippingThreshold: parseFloat(e.target.value) || 0,
                         })
                       }
-                      className="w-16 px-2 py-1 bg-white border border-slate-200 rounded font-black text-slate-900 text-xs"
+                      className="w-20 px-2 py-1.5 bg-white border border-slate-200 rounded-lg font-black text-slate-900 text-sm"
                     />
-                    <span className="text-slate-400">包郵</span>
+                    <span className="text-slate-400 font-bold">包郵</span>
                   </div>
                 </div>
               </div>
             </form>
 
             {/* 卡片 2：单人个性化打勾列表（楼长自送 vs 平台统配） */}
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 md:p-8 space-y-4">
               <div>
-                <h3 className="font-black text-base text-slate-900 flex items-center gap-2">
+                <h3 className="font-black text-base md:text-lg text-slate-900 flex items-center gap-2">
                   <Truck className="w-5 h-5 text-emerald-600" />
                   <span>【單人個性化打勾列表】（個別樓長自行配送 vs 平台統配找人送）</span>
                 </h3>
@@ -791,12 +959,12 @@ export default function AdminPage() {
                 <table className="w-full text-left text-xs">
                   <thead className="bg-slate-50 text-slate-500 font-bold border-b border-slate-200">
                     <tr>
-                      <th className="py-2.5 px-3">樓長姓名</th>
-                      <th className="py-2.5 px-3">邀請碼</th>
-                      <th className="py-2.5 px-3">負責大廈</th>
-                      <th className="py-2.5 px-3">香港電話</th>
-                      <th className="py-2.5 px-3">【單人打勾】履約與配送方式</th>
-                      <th className="py-2.5 px-3 text-right">每單應得津貼合計</th>
+                      <th className="py-3 px-4">樓長姓名</th>
+                      <th className="py-3 px-4">邀請碼</th>
+                      <th className="py-3 px-4">負責大廈</th>
+                      <th className="py-3 px-4">香港電話</th>
+                      <th className="py-3 px-4">【單人打勾】履約與配送方式</th>
+                      <th className="py-3 px-4 text-right">每單應得津貼合計</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
@@ -808,19 +976,19 @@ export default function AdminPage() {
 
                       return (
                         <tr key={leader.id} className="hover:bg-slate-50 transition">
-                          <td className="py-3 px-3 font-black text-slate-900">
+                          <td className="py-3.5 px-4 font-black text-slate-900 text-sm">
                             {leader.realName}
                           </td>
-                          <td className="py-3 px-3 font-mono font-bold text-emerald-700">
+                          <td className="py-3.5 px-4 font-mono font-bold text-emerald-700">
                             {leader.inviteCode}
                           </td>
-                          <td className="py-3 px-3 font-bold text-slate-700">
+                          <td className="py-3.5 px-4 font-bold text-slate-700">
                             {leader.buildingName}
                           </td>
-                          <td className="py-3 px-3 font-mono text-slate-500">
+                          <td className="py-3.5 px-4 font-mono text-slate-500">
                             {leader.hkPhone}
                           </td>
-                          <td className="py-3 px-3">
+                          <td className="py-3.5 px-4">
                             <label className="inline-flex items-center gap-2 cursor-pointer bg-slate-100 hover:bg-slate-200/80 px-3 py-1.5 rounded-xl border border-slate-200 transition">
                               <input
                                 type="checkbox"
@@ -841,7 +1009,7 @@ export default function AdminPage() {
                               </span>
                             </label>
                           </td>
-                          <td className="py-3 px-3 text-right">
+                          <td className="py-3.5 px-4 text-right">
                             <span className="font-black text-sm text-emerald-700">
                               HK$ {totalPerOrder.toFixed(1)}
                             </span>
@@ -859,16 +1027,16 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* 模块 5: 品牌与交付约定配置 */}
+        {/* ===================== 模块 5: 品牌与交付约定配置 ===================== */}
         {activeTab === "brand" && (
           <form
             onSubmit={handleSaveConfig}
-            className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-5"
+            className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 md:p-8 space-y-6"
           >
             <div>
-              <h3 className="font-black text-base text-slate-900 flex items-center gap-2">
+              <h3 className="font-black text-base md:text-lg text-slate-900 flex items-center gap-2">
                 <Settings className="w-5 h-5 text-emerald-600" />
-                <span>品牌、溯源與交付約定配置</span>
+                <span>品牌、溯源與交付約定配置 (PC 寬屏配置)</span>
               </h3>
               <p className="text-xs text-slate-400 mt-0.5">
                 前端即時解耦生效，支持靈活更換品牌名稱、Slogan與官方聯絡方式
@@ -876,7 +1044,7 @@ export default function AdminPage() {
             </div>
 
             <div className="space-y-4 text-xs">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block font-bold text-slate-700 mb-1">品牌主名稱</label>
                   <input
@@ -919,7 +1087,7 @@ export default function AdminPage() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block font-bold text-slate-700 mb-1">官方客服 WhatsApp</label>
                   <input
@@ -941,11 +1109,11 @@ export default function AdminPage() {
               </div>
             </div>
 
-            <div className="pt-3 border-t border-slate-100 flex justify-end">
+            <div className="pt-4 border-t border-slate-100 flex justify-end">
               <button
                 type="submit"
                 disabled={savingConfig}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-6 py-2.5 rounded-xl text-xs flex items-center gap-1.5 shadow active:scale-95 transition"
+                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-6 py-2.5 rounded-xl text-xs flex items-center gap-2 shadow-md active:scale-95 transition"
               >
                 <Save className="w-4 h-4" />
                 <span>{savingConfig ? "保存中..." : "保存文案配置"}</span>
@@ -953,7 +1121,7 @@ export default function AdminPage() {
             </div>
           </form>
         )}
-      </div>
+      </main>
 
       {/* 晋升楼长弹窗 */}
       {promoteModalOpen && (
