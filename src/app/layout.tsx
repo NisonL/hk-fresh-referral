@@ -26,10 +26,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="zh-HK">
-      <body className="min-h-screen bg-slate-50 antialiased flex flex-col items-center">
-        <div className="w-full max-w-md min-h-screen bg-white shadow-xl flex flex-col">
-          {children}
-        </div>
+      <body className="min-h-screen bg-slate-50 antialiased text-slate-800">
+        {children}
       </body>
     </html>
   );

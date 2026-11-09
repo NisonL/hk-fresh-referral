@@ -77,7 +77,7 @@ export default function LeaderDashboardPage() {
   });
 
   return (
-    <div className="flex-1 flex flex-col pb-16 bg-slate-50 min-h-screen">
+    <div className="w-full max-w-md mx-auto flex flex-col pb-16 bg-slate-50 min-h-screen shadow-xl">
       {/* 顶部身份栏 */}
       <div className="bg-slate-900 text-white px-5 pt-6 pb-6 rounded-b-3xl shadow-md">
         <div className="flex items-center justify-between mb-4">

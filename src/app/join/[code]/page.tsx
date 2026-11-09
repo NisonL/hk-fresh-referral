@@ -243,7 +243,7 @@ export default function CustomerJoinPage() {
   const filteredBuildings = buildings.filter((b) => b.estateId === selectedEstateId);
 
   return (
-    <div className="flex-1 flex flex-col pb-12">
+    <div className="w-full max-w-md mx-auto min-h-screen bg-white shadow-xl flex flex-col pb-12">
       {/* 顶部品牌横幅 */}
       <div className="bg-gradient-to-br from-emerald-600 via-emerald-700 to-green-800 text-white px-5 pt-7 pb-6 rounded-b-3xl shadow-lg relative overflow-hidden">
         <div className="absolute -right-6 -bottom-6 w-32 h-32 bg-white/10 rounded-full blur-xl pointer-events-none" />
