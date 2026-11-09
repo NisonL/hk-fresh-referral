@@ -229,7 +229,8 @@
     "runnerDeliveryFee": 2,
     "leaderCommissionRate": 2,
     "mentorAllowanceRate": 0.5,
-    "referralPointsPerOrder": 100
+    "referralPointsPerOrder": 100,
+    "showMarketPriceComparison": true
   },
   "products": [
     {
@@ -241,7 +242,9 @@
       "netWeight": "500g",
       "imageUrl": "https://images.unsplash.com/photo-1540420773420-3366772f4999?w=500&auto=format&fit=crop&q=60",
       "tag": "必搶爆款",
-      "inStock": true
+      "inStock": true,
+      "isActive": true,
+      "showMarketPrice": true
     },
     {
       "id": "prod-2",
@@ -252,7 +255,9 @@
       "netWeight": "500g",
       "imageUrl": "https://images.unsplash.com/photo-1622206151226-18ca2c9ab4a1?w=500&auto=format&fit=crop&q=60",
       "tag": "街坊最愛",
-      "inStock": true
+      "inStock": true,
+      "isActive": true,
+      "showMarketPrice": true
     },
     {
       "id": "prod-3",
@@ -263,7 +268,9 @@
       "netWeight": "500g",
       "imageUrl": "https://images.unsplash.com/photo-1576045057995-568f588f82fb?w=500&auto=format&fit=crop&q=60",
       "tag": "清甜嫩口",
-      "inStock": true
+      "inStock": true,
+      "isActive": true,
+      "showMarketPrice": true
     },
     {
       "id": "prod-4",
@@ -274,7 +281,9 @@
       "netWeight": "500g",
       "imageUrl": "https://images.unsplash.com/photo-1604977042946-1eecc30f269e?w=500&auto=format&fit=crop&q=60",
       "tag": "消暑必選",
-      "inStock": true
+      "inStock": true,
+      "isActive": true,
+      "showMarketPrice": true
     },
     {
       "id": "prod-5",
@@ -285,7 +294,9 @@
       "netWeight": "500g",
       "imageUrl": "https://images.unsplash.com/photo-1598170845058-32b9d6a5da37?w=500&auto=format&fit=crop&q=60",
       "tag": "特惠日常",
-      "inStock": true
+      "inStock": true,
+      "isActive": true,
+      "showMarketPrice": true
     },
     {
       "id": "prod-6",
@@ -296,7 +307,9 @@
       "netWeight": "500g",
       "imageUrl": "https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=500&auto=format&fit=crop&q=60",
       "tag": "沙瓤濃香",
-      "inStock": true
+      "inStock": true,
+      "isActive": true,
+      "showMarketPrice": true
     },
     {
       "id": "prod-7",
@@ -307,7 +320,9 @@
       "netWeight": "500g",
       "imageUrl": "https://images.unsplash.com/photo-1597362925123-77861d3fbac7?w=500&auto=format&fit=crop&q=60",
       "tag": "清甜滾湯",
-      "inStock": true
+      "inStock": true,
+      "isActive": true,
+      "showMarketPrice": true
     },
     {
       "id": "prod-8",
@@ -318,7 +333,9 @@
       "netWeight": "500g",
       "imageUrl": "https://images.unsplash.com/photo-1459411621453-7b03977f4bfc?w=500&auto=format&fit=crop&q=60",
       "tag": "健康輕食",
-      "inStock": true
+      "inStock": true,
+      "isActive": true,
+      "showMarketPrice": true
     }
   ],
   "orders": [

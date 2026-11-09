@@ -348,9 +348,11 @@ export default function OrderPage() {
                           <span className="text-rose-600 font-black text-base">
                             HK$ {p.priceHkd.toFixed(1)}
                           </span>
-                          <span className="text-slate-300 line-through text-xs">
-                            HK$ {p.marketPriceHkd.toFixed(1)}
-                          </span>
+                          {(config?.showMarketPriceComparison ?? true) && (p.showMarketPrice ?? true) && p.marketPriceHkd ? (
+                            <span className="text-slate-400 line-through text-xs">
+                              HK$ {p.marketPriceHkd.toFixed(1)}
+                            </span>
+                          ) : null}
                           <span className="text-[10px] text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded font-bold">
                             {p.netWeight}
                           </span>

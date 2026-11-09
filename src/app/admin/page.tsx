@@ -31,6 +31,10 @@ import {
   X,
   Store,
   Smartphone,
+  Plus,
+  Trash2,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { AppConfig, Product, Leader, Customer, Order } from "@/types";
 
@@ -62,6 +66,27 @@ export default function AdminPage() {
   // 编辑配置状态
   const [configForm, setConfigForm] = useState<Partial<AppConfig>>({});
   const [savingConfig, setSavingConfig] = useState(false);
+
+  // 商品动态管理状态（添加、编辑、删除、上下架、街市参考价打勾）
+  const [addProductModalOpen, setAddProductModalOpen] = useState(false);
+  const [newProductForm, setNewProductForm] = useState<Partial<Product>>({
+    nameZh: "",
+    subTitle: "足500g保鮮裝 · 晨早露水摘採 · 炒灼皆宜",
+    netWeight: "500g",
+    priceHkd: 8.5,
+    marketPriceHkd: 12.0,
+    showMarketPrice: true,
+    tag: "新品推薦",
+    imageUrl: "https://images.unsplash.com/photo-1540420773420-3366772f4999?w=500&auto=format&fit=crop&q=60",
+    isActive: true,
+    inStock: true,
+    category: "精選蔬菜",
+  });
+  const [addingProduct, setAddingProduct] = useState(false);
+
+  const [editProductModalOpen, setEditProductModalOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [savingEditProduct, setSavingEditProduct] = useState(false);
 
   useEffect(() => {
     fetchAdminData();
@@ -158,17 +183,170 @@ export default function AdminPage() {
     }
   };
 
-  const handleUpdateProductPrice = async (id: string, newPrice: number) => {
+  // 预设优质蔬菜图片库（方便一键选用，无需到处找链接）
+  const PRESET_VEG_IMAGES = [
+    { label: "菜心苗/芥藍 (綠葉嫩苗)", url: "https://images.unsplash.com/photo-1540420773420-3366772f4999?w=500&auto=format&fit=crop&q=60" },
+    { label: "生菜/油麥菜 (鮮脆綠葉)", url: "https://images.unsplash.com/photo-1622206151226-18ca2c9ab4a1?w=500&auto=format&fit=crop&q=60" },
+    { label: "白菜仔/上海青 (鮮甜幼滑)", url: "https://images.unsplash.com/photo-1598170845058-32b9d6a5da37?w=500&auto=format&fit=crop&q=60" },
+    { label: "青瓜/水瓜 (爽脆多汁)", url: "https://images.unsplash.com/photo-1604977042946-1eecc30f269e?w=500&auto=format&fit=crop&q=60" },
+    { label: "甜砂番茄 (沙瓤多汁)", url: "https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=500&auto=format&fit=crop&q=60" },
+    { label: "西蘭花/花菜 (緊實脆嫩)", url: "https://images.unsplash.com/photo-1459411621453-7b03977f4bfc?w=500&auto=format&fit=crop&q=60" },
+    { label: "白蘿蔔/胡蘿蔔 (清甜生津)", url: "https://images.unsplash.com/photo-1590779033100-9f60a05a013d?w=500&auto=format&fit=crop&q=60" },
+    { label: "玉米/煲湯蔬菜包 (養生滋補)", url: "https://images.unsplash.com/photo-1551754655-cd27e38d2076?w=500&auto=format&fit=crop&q=60" },
+  ];
+
+  // 1. 添加新商品上架
+  const handleAddProduct = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newProductForm.nameZh?.trim()) {
+      alert("請輸入商品品名");
+      return;
+    }
+    try {
+      setAddingProduct(true);
+      const res = await fetch("/api/products", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newProductForm),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "添加失敗");
+      setProducts((prev) => [data.product, ...prev]);
+      setAddProductModalOpen(false);
+      setNewProductForm({
+        nameZh: "",
+        subTitle: "足500g保鮮裝 · 晨早露水摘採 · 炒灼皆宜",
+        netWeight: "500g",
+        priceHkd: 8.5,
+        marketPriceHkd: 12.0,
+        showMarketPrice: true,
+        tag: "新品推薦",
+        imageUrl: "https://images.unsplash.com/photo-1540420773420-3366772f4999?w=500&auto=format&fit=crop&q=60",
+        isActive: true,
+        inStock: true,
+        category: "精選蔬菜",
+      });
+      alert(`「${data.product.nameZh}」已成功新增並上架！`);
+    } catch (err: any) {
+      alert(err.message || "網絡錯誤");
+    } finally {
+      setAddingProduct(false);
+    }
+  };
+
+  // 2. 打开全功能编辑弹窗
+  const handleOpenEditModal = (p: Product) => {
+    setEditingProduct({ ...p });
+    setEditProductModalOpen(true);
+  };
+
+  // 3. 保存编辑商品全量字段
+  const handleSaveEditProduct = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingProduct) return;
+    try {
+      setSavingEditProduct(true);
+      const res = await fetch("/api/products", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(editingProduct),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "保存失敗");
+      setProducts((prev) =>
+        prev.map((p) => (p.id === editingProduct.id ? data.product : p))
+      );
+      setEditProductModalOpen(false);
+      setEditingProduct(null);
+    } catch (err: any) {
+      alert(err.message || "網絡錯誤");
+    } finally {
+      setSavingEditProduct(false);
+    }
+  };
+
+  // 4. 删除商品
+  const handleDeleteProduct = async (id: string, nameZh: string) => {
+    if (!window.confirm(`確定要徹底刪除商品「${nameZh}」嗎？此操作將從貨架徹底移除，不可逆。`)) {
+      return;
+    }
+    try {
+      const res = await fetch(`/api/products?id=${id}`, { method: "DELETE" });
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.error || "刪除失敗");
+      setProducts((prev) => prev.filter((p) => p.id !== id));
+    } catch (err: any) {
+      alert(err.message || "網絡錯誤");
+    }
+  };
+
+  // 5. 切换商品上下架（隐藏/上架）
+  const handleToggleProductActive = async (id: string, newActive: boolean) => {
     try {
       const res = await fetch("/api/products", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id, priceHkd: newPrice }),
+        body: JSON.stringify({ id, isActive: newActive }),
       });
       if (res.ok) {
         setProducts((prev) =>
-          prev.map((p) => (p.id === id ? { ...p, priceHkd: newPrice } : p))
+          prev.map((p) => (p.id === id ? { ...p, isActive: newActive } : p))
         );
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  // 6. 切换单品街市参考价打勾（打勾就有，不打勾就没有）
+  const handleToggleProductMarketPrice = async (id: string, newShowMarketPrice: boolean) => {
+    try {
+      const res = await fetch("/api/products", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, showMarketPrice: newShowMarketPrice }),
+      });
+      if (res.ok) {
+        setProducts((prev) =>
+          prev.map((p) => (p.id === id ? { ...p, showMarketPrice: newShowMarketPrice } : p))
+        );
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  // 7. 更新商品字段（快捷行内修改品名、价格、参考价等）
+  const handleUpdateProductField = async (id: string, field: string, value: any) => {
+    try {
+      const res = await fetch("/api/products", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, [field]: value }),
+      });
+      if (res.ok) {
+        setProducts((prev) =>
+          prev.map((p) => (p.id === id ? { ...p, [field]: value } : p))
+        );
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  // 8. 切换全局街市参考价打勾开关
+  const handleToggleGlobalMarketPrice = async () => {
+    if (!config) return;
+    const nextVal = !config.showMarketPriceComparison;
+    try {
+      const res = await fetch("/api/admin/config", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ showMarketPriceComparison: nextVal }),
+      });
+      if (res.ok) {
+        setConfig((prev: any) => ({ ...prev, showMarketPriceComparison: nextVal }));
+        setConfigForm((prev: any) => ({ ...prev, showMarketPriceComparison: nextVal }));
       }
     } catch (err) {
       console.error(err);
@@ -618,63 +796,228 @@ export default function AdminPage() {
         {/* ===================== 模块 2: 商品与货架管理 (宽屏多列网格) ===================== */}
         {activeTab === "products" && (
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-6">
-            <div>
-              <h3 className="font-black text-base md:text-lg text-slate-900 flex items-center gap-2">
-                <ShoppingBag className="w-5 h-5 text-emerald-600" />
-                <span>今日 8 大主力自選蔬菜貨架管理 (PC 寬屏多列陳列)</span>
-              </h3>
-              <p className="text-xs text-slate-400 mt-0.5">
-                單品均為足 500g 精選保鮮裝，對標旺角街市打 7 折，毛利率堅守在 40% - 58%
-              </p>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-100 gap-4">
+              <div>
+                <h3 className="font-black text-base md:text-lg text-slate-900 flex items-center gap-2">
+                  <ShoppingBag className="w-5 h-5 text-emerald-600" />
+                  <span>商品貨架動態管理 (隨時新增、刪除、編輯規格與上下架)</span>
+                </h3>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  所有品名、規格標牌（如足500T）、零售價均可隨時編輯；支援單品與全站「旺角街市參考價」打勾開關
+                </p>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-3">
+                {/* 全局街市参考价打勾开关：打勾就有，不打勾就没有 */}
+                <button
+                  type="button"
+                  onClick={handleToggleGlobalMarketPrice}
+                  className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold border transition ${
+                    config?.showMarketPriceComparison
+                      ? "bg-emerald-50 text-emerald-900 border-emerald-300 shadow-sm"
+                      : "bg-slate-50 text-slate-500 border-slate-200"
+                  }`}
+                  title="控制商城端是否展示街市劃線價對比"
+                >
+                  {config?.showMarketPriceComparison ? (
+                    <CheckSquare className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                  ) : (
+                    <Square className="w-4 h-4 text-slate-400 flex-shrink-0" />
+                  )}
+                  <span>全站街市參考價對比：{config?.showMarketPriceComparison ? "已打勾開啟" : "未打勾隱藏"}</span>
+                </button>
+
+                {/* 新增商品按钮 */}
+                <button
+                  type="button"
+                  onClick={() => setAddProductModalOpen(true)}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 shadow-md active:scale-95 transition"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>新增商品上架</span>
+                </button>
+              </div>
             </div>
 
+            {/* 商品多列自适应卡片展示 */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {products.map((p) => (
-                <div
-                  key={p.id}
-                  className="p-4 rounded-2xl border border-slate-200 bg-slate-50 flex flex-col justify-between hover:border-emerald-300 transition"
-                >
-                  <div className="flex items-center gap-3.5 mb-3">
-                    <img
-                      src={p.imageUrl}
-                      alt={p.nameZh}
-                      className="w-16 h-16 rounded-xl object-cover bg-white shadow-sm flex-shrink-0"
-                    />
-                    <div className="min-w-0">
-                      <h4 className="font-bold text-slate-900 text-sm truncate">{p.nameZh}</h4>
-                      <p className="text-[11px] text-slate-400 truncate mt-0.5">{p.subTitle}</p>
-                      <span className="inline-block mt-1 text-[10px] bg-emerald-100 text-emerald-800 font-bold px-1.5 py-0.2 rounded">
-                        {p.netWeight} 足斤裝
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="pt-3 border-t border-slate-200/80 flex items-center justify-between">
+              {products.map((p) => {
+                const isHidden = p.isActive === false;
+                const isMarketPriceOn = p.showMarketPrice !== false;
+                return (
+                  <div
+                    key={p.id}
+                    className={`p-4 rounded-2xl border transition flex flex-col justify-between ${
+                      isHidden
+                        ? "bg-slate-100/70 border-dashed border-slate-300 opacity-70"
+                        : "bg-slate-50 border-slate-200 hover:border-emerald-300 shadow-sm"
+                    }`}
+                  >
                     <div>
-                      <span className="text-[11px] text-slate-400 block">零售特惠價</span>
-                      <div className="flex items-center gap-1">
-                        <span className="font-bold text-slate-700 text-xs">HK$</span>
-                        <input
-                          type="number"
-                          step="0.1"
-                          value={p.priceHkd}
-                          onChange={(e) =>
-                            handleUpdateProductPrice(p.id, parseFloat(e.target.value) || 0)
-                          }
-                          className="w-18 px-2 py-1 bg-white border border-slate-300 rounded-lg font-black text-rose-600 text-sm focus:outline-none focus:border-emerald-500"
+                      {/* 顶部状态与角标 */}
+                      <div className="flex items-center justify-between gap-2 mb-2">
+                        <span
+                          className={`text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1.5 ${
+                            isHidden
+                              ? "bg-slate-200 text-slate-600"
+                              : "bg-emerald-100 text-emerald-800"
+                          }`}
+                        >
+                          <span
+                            className={`w-1.5 h-1.5 rounded-full ${
+                              isHidden ? "bg-slate-400" : "bg-emerald-500 animate-pulse"
+                            }`}
+                          />
+                          <span>{isHidden ? "已隱藏/下架" : "已上架展示中"}</span>
+                        </span>
+
+                        {p.tag && (
+                          <span className="text-[10px] font-bold bg-rose-100 text-rose-700 px-2 py-0.5 rounded-md">
+                            {p.tag}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* 图片与基本信息 */}
+                      <div className="flex items-start gap-3 mb-3">
+                        <img
+                          src={p.imageUrl}
+                          alt={p.nameZh}
+                          className="w-16 h-16 rounded-xl object-cover bg-white shadow-sm flex-shrink-0 border border-slate-200"
                         />
+                        <div className="min-w-0 flex-1">
+                          <h4 className="font-bold text-slate-900 text-sm truncate" title={p.nameZh}>
+                            {p.nameZh}
+                          </h4>
+                          <p className="text-[11px] text-slate-400 line-clamp-1 mt-0.5" title={p.subTitle}>
+                            {p.subTitle}
+                          </p>
+                          <div className="flex items-center gap-1.5 mt-1.5">
+                            <span className="text-[10px] bg-slate-200/90 text-slate-700 font-bold px-1.5 py-0.5 rounded font-mono">
+                              {p.netWeight || "500g"}
+                            </span>
+                            <span
+                              className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                                p.inStock ? "bg-blue-50 text-blue-700" : "bg-rose-50 text-rose-600"
+                              }`}
+                            >
+                              {p.inStock ? "現貨充足" : "暫時沽清"}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* 价格与参考价区域 (支持行内即时修改) */}
+                      <div className="p-3 bg-white rounded-xl border border-slate-200/80 space-y-2 mb-3">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-slate-500 font-medium">特惠售價：</span>
+                          <div className="flex items-center gap-1">
+                            <span className="font-black text-rose-600 text-sm">HK$</span>
+                            <input
+                              type="number"
+                              step="0.1"
+                              value={p.priceHkd}
+                              onChange={(e) =>
+                                handleUpdateProductField(p.id, "priceHkd", parseFloat(e.target.value) || 0)
+                              }
+                              className="w-16 px-1.5 py-0.5 border border-slate-300 rounded font-black text-rose-600 text-xs text-right focus:outline-none focus:border-emerald-500"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between text-xs pt-1.5 border-t border-slate-100">
+                          <span className="text-slate-400">街市參考：</span>
+                          <div className="flex items-center gap-1">
+                            <span className="text-slate-400 text-xs">HK$</span>
+                            <input
+                              type="number"
+                              step="0.1"
+                              value={p.marketPriceHkd ?? ""}
+                              placeholder="無"
+                              onChange={(e) =>
+                                handleUpdateProductField(
+                                  p.id,
+                                  "marketPriceHkd",
+                                  e.target.value ? parseFloat(e.target.value) : undefined
+                                )
+                              }
+                              className="w-16 px-1.5 py-0.5 border border-slate-200 rounded text-slate-500 text-xs text-right focus:outline-none focus:border-emerald-500"
+                            />
+                          </div>
+                        </div>
+
+                        {/* 单品街市参考价打勾开关：打勾就有，不打勾就没有 */}
+                        <button
+                          type="button"
+                          onClick={() => handleToggleProductMarketPrice(p.id, !isMarketPriceOn)}
+                          className="w-full flex items-center justify-between pt-1.5 border-t border-slate-100 text-[11px] text-left hover:text-emerald-700 transition"
+                        >
+                          <span className="text-slate-500">對比街市劃線價</span>
+                          <div className="flex items-center gap-1 font-bold">
+                            {isMarketPriceOn ? (
+                              <CheckSquare className="w-3.5 h-3.5 text-emerald-600" />
+                            ) : (
+                              <Square className="w-3.5 h-3.5 text-slate-300" />
+                            )}
+                            <span className={isMarketPriceOn ? "text-emerald-700" : "text-slate-400"}>
+                              {isMarketPriceOn ? "已打勾" : "不打勾"}
+                            </span>
+                          </div>
+                        </button>
                       </div>
                     </div>
 
-                    <div className="text-right">
-                      <span className="text-[10px] text-slate-400 block">旺角街市參考</span>
-                      <span className="text-xs text-slate-400 line-through">
-                        HK$ {p.marketPriceHkd}
-                      </span>
+                    {/* 底部操作区：上下架切换 / 完整编辑 / 删除 */}
+                    <div className="pt-2 border-t border-slate-200/80 flex items-center justify-between gap-1">
+                      {/* 上架 / 隐藏下架一键打勾切换 */}
+                      <button
+                        type="button"
+                        onClick={() => handleToggleProductActive(p.id, isHidden ? true : false)}
+                        className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 ${
+                          isHidden
+                            ? "bg-emerald-100 text-emerald-800 hover:bg-emerald-200"
+                            : "bg-slate-200 text-slate-700 hover:bg-slate-300"
+                        }`}
+                      >
+                        {isHidden ? (
+                          <>
+                            <Eye className="w-3 h-3 text-emerald-700" />
+                            <span>恢復上架</span>
+                          </>
+                        ) : (
+                          <>
+                            <EyeOff className="w-3 h-3 text-slate-500" />
+                            <span>隱藏下架</span>
+                          </>
+                        )}
+                      </button>
+
+                      <div className="flex items-center gap-1">
+                        {/* 完整编辑详情模态框 (可改品名、规格「足500T」、图片等全字段) */}
+                        <button
+                          type="button"
+                          onClick={() => handleOpenEditModal(p)}
+                          className="p-1.5 rounded-lg bg-slate-100 hover:bg-emerald-50 text-slate-600 hover:text-emerald-700 transition text-xs font-bold flex items-center gap-1"
+                          title="編輯品名、規格描述、淨重標牌、圖片等全量資料"
+                        >
+                          <Edit2 className="w-3.5 h-3.5" />
+                          <span className="hidden sm:inline">編輯</span>
+                        </button>
+
+                        {/* 删除商品按钮 */}
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteProduct(p.id, p.nameZh)}
+                          className="p-1.5 rounded-lg bg-slate-100 hover:bg-rose-50 text-slate-400 hover:text-rose-600 transition text-xs"
+                          title="徹底刪除商品"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
@@ -938,6 +1281,34 @@ export default function AdminPage() {
                       className="w-20 px-2 py-1.5 bg-white border border-slate-200 rounded-lg font-black text-slate-900 text-sm"
                     />
                     <span className="text-slate-400 font-bold">包郵</span>
+                  </div>
+                </div>
+
+                {/* 规则 6: 全局旺角街市参考价对比打勾 */}
+                <div className="p-4 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-between lg:col-span-2">
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="checkbox"
+                      id="chk-market-price-rule"
+                      checked={configForm.showMarketPriceComparison ?? true}
+                      onChange={(e) =>
+                        setConfigForm({ ...configForm, showMarketPriceComparison: e.target.checked })
+                      }
+                      className="w-5 h-5 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500 cursor-pointer"
+                    />
+                    <label htmlFor="chk-market-price-rule" className="cursor-pointer">
+                      <div className="font-bold text-slate-900 text-sm">
+                        6. 全局旺角街市劃線參考價對比 (打勾就有，不打勾就沒有)
+                      </div>
+                      <div className="text-[11px] text-slate-400">
+                        {configForm.showMarketPriceComparison
+                          ? "✅ 已打勾啟用：街坊商城端展示「旺角街市劃線價」進行價格對比"
+                          : "❌ 未打勾停用：街坊商城端只展示平台實收特惠價，全站隱藏街市對比"}
+                      </div>
+                    </label>
+                  </div>
+                  <div className="font-bold text-xs text-slate-600 bg-white px-3 py-1.5 rounded-lg border border-slate-200">
+                    {configForm.showMarketPriceComparison ? "顯示街市劃線價" : "純特惠價無對比"}
                   </div>
                 </div>
               </div>
@@ -1209,6 +1580,472 @@ export default function AdminPage() {
                   className="px-5 py-2 bg-emerald-600 text-white rounded-xl font-black"
                 >
                   確認晉升並平移客戶
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ===================== 新增商品上架弹窗 (Add Product Modal) ===================== */}
+      {addProductModalOpen && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white w-full max-w-xl rounded-2xl p-6 md:p-8 space-y-5 my-8 shadow-2xl">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <ShoppingBag className="w-5 h-5 text-emerald-600" />
+                <h3 className="font-black text-lg text-slate-900">新增生鮮蔬菜上架</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setAddProductModalOpen(false)}
+                className="p-1 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-700"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleAddProduct} className="space-y-4 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">
+                    菜品名稱 <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="例如：特選上海青 / 西洋菜"
+                    value={newProductForm.nameZh || ""}
+                    onChange={(e) => setNewProductForm({ ...newProductForm, nameZh: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold focus:outline-none focus:border-emerald-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">
+                    規格標牌 / 淨重 (如：足500T、500g)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="例如：足500T、500g、約2-3條"
+                    value={newProductForm.netWeight || ""}
+                    onChange={(e) => setNewProductForm({ ...newProductForm, netWeight: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold focus:outline-none focus:border-emerald-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">
+                  規格與賣點描述
+                </label>
+                <input
+                  type="text"
+                  placeholder="例如：足500g保鮮裝 · 晨採直供 · 爽脆鮮嫩"
+                  value={newProductForm.subTitle || ""}
+                  onChange={(e) => setNewProductForm({ ...newProductForm, subTitle: e.target.value })}
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:outline-none focus:border-emerald-500"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-3 bg-slate-50 rounded-xl border border-slate-200/80">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">
+                    平台特惠售價 (HK$) <span className="text-rose-500">*</span>
+                  </label>
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-bold text-slate-500">HK$</span>
+                    <input
+                      type="number"
+                      step="0.1"
+                      required
+                      value={newProductForm.priceHkd ?? 8.5}
+                      onChange={(e) =>
+                        setNewProductForm({
+                          ...newProductForm,
+                          priceHkd: parseFloat(e.target.value) || 0,
+                        })
+                      }
+                      className="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-xl font-black text-rose-600 focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">
+                    旺角街市參考價 (HK$)
+                  </label>
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-bold text-slate-400">HK$</span>
+                    <input
+                      type="number"
+                      step="0.1"
+                      placeholder="無則留空"
+                      value={newProductForm.marketPriceHkd ?? ""}
+                      onChange={(e) =>
+                        setNewProductForm({
+                          ...newProductForm,
+                          marketPriceHkd: e.target.value ? parseFloat(e.target.value) : undefined,
+                        })
+                      }
+                      className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-xl font-bold text-slate-600 focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+                </div>
+
+                {/* 街市参考价打勾控制 */}
+                <div className="sm:col-span-2 pt-2 border-t border-slate-200/60 flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="new-chk-market"
+                    checked={newProductForm.showMarketPrice ?? true}
+                    onChange={(e) =>
+                      setNewProductForm({ ...newProductForm, showMarketPrice: e.target.checked })
+                    }
+                    className="w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500 cursor-pointer"
+                  />
+                  <label htmlFor="new-chk-market" className="font-bold text-slate-700 cursor-pointer">
+                    對比旺角街市參考價（打勾就有劃線對比，不打勾就沒有）
+                  </label>
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">特色標籤角標</label>
+                <div className="flex flex-wrap items-center gap-2 mb-2">
+                  {["必搶爆款", "街坊最愛", "當造推薦", "特惠日常", "沙瓤濃香", "清甜滾湯"].map((tag) => (
+                    <button
+                      key={tag}
+                      type="button"
+                      onClick={() => setNewProductForm({ ...newProductForm, tag })}
+                      className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border transition ${
+                        newProductForm.tag === tag
+                          ? "bg-rose-50 border-rose-300 text-rose-700"
+                          : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"
+                      }`}
+                    >
+                      {tag}
+                    </button>
+                  ))}
+                </div>
+                <input
+                  type="text"
+                  placeholder="自定義標籤，或點擊上方快捷填入"
+                  value={newProductForm.tag || ""}
+                  onChange={(e) => setNewProductForm({ ...newProductForm, tag: e.target.value })}
+                  className="w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">
+                  菜品展示圖片 (可從下方庫中直接點選，或自訂 URL)
+                </label>
+                <div className="grid grid-cols-4 sm:grid-cols-4 gap-2 mb-2.5">
+                  {PRESET_VEG_IMAGES.map((img, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => setNewProductForm({ ...newProductForm, imageUrl: img.url })}
+                      className={`p-1.5 rounded-xl border text-left flex flex-col items-center gap-1 transition ${
+                        newProductForm.imageUrl === img.url
+                          ? "border-emerald-500 bg-emerald-50 ring-2 ring-emerald-400/30"
+                          : "border-slate-200 bg-slate-50 hover:border-slate-300"
+                      }`}
+                    >
+                      <img src={img.url} alt={img.label} className="w-12 h-12 object-cover rounded-lg" />
+                      <span className="text-[10px] text-slate-600 truncate w-full text-center font-medium">
+                        {img.label.split(" ")[0]}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+                <input
+                  type="url"
+                  placeholder="圖片網址 URL"
+                  value={newProductForm.imageUrl || ""}
+                  onChange={(e) => setNewProductForm({ ...newProductForm, imageUrl: e.target.value })}
+                  className="w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-600 font-mono text-[11px] focus:outline-none"
+                />
+              </div>
+
+              <div className="flex items-center gap-6 pt-2 border-t border-slate-100">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={newProductForm.isActive ?? true}
+                    onChange={(e) => setNewProductForm({ ...newProductForm, isActive: e.target.checked })}
+                    className="w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500"
+                  />
+                  <span className="font-bold text-slate-800">立即上架（打勾街坊可見，不打勾隱藏）</span>
+                </label>
+
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={newProductForm.inStock ?? true}
+                    onChange={(e) => setNewProductForm({ ...newProductForm, inStock: e.target.checked })}
+                    className="w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500"
+                  />
+                  <span className="font-bold text-slate-800">現貨在席（打勾有貨，不打勾沽清）</span>
+                </label>
+              </div>
+
+              <div className="pt-4 border-t border-slate-100 flex justify-end gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setAddProductModalOpen(false)}
+                  className="px-4 py-2 border border-slate-200 rounded-xl text-slate-600 font-bold"
+                >
+                  取消
+                </button>
+                <button
+                  type="submit"
+                  disabled={addingProduct}
+                  className="px-6 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-black shadow-md transition active:scale-95 flex items-center gap-1.5"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>{addingProduct ? "上架中..." : "確認上架商品"}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ===================== 编辑商品全量详细资料弹窗 (Edit Product Modal) ===================== */}
+      {editProductModalOpen && editingProduct && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white w-full max-w-xl rounded-2xl p-6 md:p-8 space-y-5 my-8 shadow-2xl">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <Edit2 className="w-5 h-5 text-emerald-600" />
+                <h3 className="font-black text-lg text-slate-900">
+                  編輯商品資料（品名、規格「足500T」、價格全字段）
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setEditProductModalOpen(false);
+                  setEditingProduct(null);
+                }}
+                className="p-1 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-700"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEditProduct} className="space-y-4 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">
+                    菜品名稱 <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={editingProduct.nameZh}
+                    onChange={(e) => setEditingProduct({ ...editingProduct, nameZh: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold focus:outline-none focus:border-emerald-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">
+                    規格標牌 / 淨重 (如：足500T、500g、約2-3條)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="例如：足500T、500g"
+                    value={editingProduct.netWeight}
+                    onChange={(e) => setEditingProduct({ ...editingProduct, netWeight: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold focus:outline-none focus:border-emerald-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">
+                  規格與賣點描述
+                </label>
+                <input
+                  type="text"
+                  value={editingProduct.subTitle}
+                  onChange={(e) => setEditingProduct({ ...editingProduct, subTitle: e.target.value })}
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:outline-none focus:border-emerald-500"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-3 bg-slate-50 rounded-xl border border-slate-200/80">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">
+                    平台特惠售價 (HK$) <span className="text-rose-500">*</span>
+                  </label>
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-bold text-slate-500">HK$</span>
+                    <input
+                      type="number"
+                      step="0.1"
+                      required
+                      value={editingProduct.priceHkd}
+                      onChange={(e) =>
+                        setEditingProduct({
+                          ...editingProduct,
+                          priceHkd: parseFloat(e.target.value) || 0,
+                        })
+                      }
+                      className="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-xl font-black text-rose-600 focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">
+                    旺角街市參考價 (HK$)
+                  </label>
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-bold text-slate-400">HK$</span>
+                    <input
+                      type="number"
+                      step="0.1"
+                      placeholder="無則留空"
+                      value={editingProduct.marketPriceHkd ?? ""}
+                      onChange={(e) =>
+                        setEditingProduct({
+                          ...editingProduct,
+                          marketPriceHkd: e.target.value ? parseFloat(e.target.value) : undefined,
+                        })
+                      }
+                      className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-xl font-bold text-slate-600 focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+                </div>
+
+                {/* 单品街市参考价打勾控制 */}
+                <div className="sm:col-span-2 pt-2 border-t border-slate-200/60 flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="edit-chk-market"
+                    checked={editingProduct.showMarketPrice !== false}
+                    onChange={(e) =>
+                      setEditingProduct({ ...editingProduct, showMarketPrice: e.target.checked })
+                    }
+                    className="w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500 cursor-pointer"
+                  />
+                  <label htmlFor="edit-chk-market" className="font-bold text-slate-700 cursor-pointer">
+                    對比旺角街市參考價（打勾就有劃線對比，不打勾就沒有）
+                  </label>
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">特色標籤角標</label>
+                <div className="flex flex-wrap items-center gap-2 mb-2">
+                  {["必搶爆款", "街坊最愛", "當造推薦", "特惠日常", "沙瓤濃香", "清甜滾湯"].map((tag) => (
+                    <button
+                      key={tag}
+                      type="button"
+                      onClick={() => setEditingProduct({ ...editingProduct, tag })}
+                      className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border transition ${
+                        editingProduct.tag === tag
+                          ? "bg-rose-50 border-rose-300 text-rose-700"
+                          : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"
+                      }`}
+                    >
+                      {tag}
+                    </button>
+                  ))}
+                </div>
+                <input
+                  type="text"
+                  placeholder="自定義標籤，或點擊上方快捷填入"
+                  value={editingProduct.tag || ""}
+                  onChange={(e) => setEditingProduct({ ...editingProduct, tag: e.target.value })}
+                  className="w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">
+                  菜品展示圖片 (可點選預設圖或自訂 URL)
+                </label>
+                <div className="grid grid-cols-4 sm:grid-cols-4 gap-2 mb-2.5">
+                  {PRESET_VEG_IMAGES.map((img, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => setEditingProduct({ ...editingProduct, imageUrl: img.url })}
+                      className={`p-1.5 rounded-xl border text-left flex flex-col items-center gap-1 transition ${
+                        editingProduct.imageUrl === img.url
+                          ? "border-emerald-500 bg-emerald-50 ring-2 ring-emerald-400/30"
+                          : "border-slate-200 bg-slate-50 hover:border-slate-300"
+                      }`}
+                    >
+                      <img src={img.url} alt={img.label} className="w-12 h-12 object-cover rounded-lg" />
+                      <span className="text-[10px] text-slate-600 truncate w-full text-center font-medium">
+                        {img.label.split(" ")[0]}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+                <input
+                  type="url"
+                  placeholder="圖片網址 URL"
+                  value={editingProduct.imageUrl}
+                  onChange={(e) => setEditingProduct({ ...editingProduct, imageUrl: e.target.value })}
+                  className="w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-600 font-mono text-[11px] focus:outline-none"
+                />
+              </div>
+
+              <div className="flex items-center gap-6 pt-2 border-t border-slate-100">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={editingProduct.isActive !== false}
+                    onChange={(e) =>
+                      setEditingProduct({ ...editingProduct, isActive: e.target.checked })
+                    }
+                    className="w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500"
+                  />
+                  <span className="font-bold text-slate-800">
+                    上架狀態（打勾街坊可見，不打勾隱藏）
+                  </span>
+                </label>
+
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={editingProduct.inStock}
+                    onChange={(e) =>
+                      setEditingProduct({ ...editingProduct, inStock: e.target.checked })
+                    }
+                    className="w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500"
+                  />
+                  <span className="font-bold text-slate-800">
+                    庫存狀態（打勾有貨，不打勾沽清）
+                  </span>
+                </label>
+              </div>
+
+              <div className="pt-4 border-t border-slate-100 flex justify-end gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditProductModalOpen(false);
+                    setEditingProduct(null);
+                  }}
+                  className="px-4 py-2 border border-slate-200 rounded-xl text-slate-600 font-bold"
+                >
+                  取消
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingEditProduct}
+                  className="px-6 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-black shadow-md transition active:scale-95 flex items-center gap-1.5"
+                >
+                  <Save className="w-4 h-4" />
+                  <span>{savingEditProduct ? "保存中..." : "保存商品修改"}</span>
                 </button>
               </div>
             </form>

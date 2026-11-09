@@ -42,6 +42,9 @@ const INITIAL_CONFIG: AppConfig = {
   runnerDeliveryFee: 2.0,
   enableReferralPoints: true,
   referralPointsPerOrder: 100,
+
+  // 全局展示打勾开关（打勾展示对比，不打勾则全站隐藏）
+  showMarketPriceComparison: true,
 };
 
 const INITIAL_PRODUCTS: Product[] = [
@@ -55,6 +58,8 @@ const INITIAL_PRODUCTS: Product[] = [
     imageUrl: "https://images.unsplash.com/photo-1540420773420-3366772f4999?w=500&auto=format&fit=crop&q=60",
     tag: "必搶爆款",
     inStock: true,
+    isActive: true,
+    showMarketPrice: true,
   },
   {
     id: "prod-2",
@@ -66,6 +71,8 @@ const INITIAL_PRODUCTS: Product[] = [
     imageUrl: "https://images.unsplash.com/photo-1622206151226-18ca2c9ab4a1?w=500&auto=format&fit=crop&q=60",
     tag: "街坊最愛",
     inStock: true,
+    isActive: true,
+    showMarketPrice: true,
   },
   {
     id: "prod-3",
@@ -77,6 +84,8 @@ const INITIAL_PRODUCTS: Product[] = [
     imageUrl: "https://images.unsplash.com/photo-1576045057995-568f588f82fb?w=500&auto=format&fit=crop&q=60",
     tag: "清甜嫩口",
     inStock: true,
+    isActive: true,
+    showMarketPrice: true,
   },
   {
     id: "prod-4",
@@ -88,6 +97,8 @@ const INITIAL_PRODUCTS: Product[] = [
     imageUrl: "https://images.unsplash.com/photo-1604977042946-1eecc30f269e?w=500&auto=format&fit=crop&q=60",
     tag: "消暑必選",
     inStock: true,
+    isActive: true,
+    showMarketPrice: true,
   },
   {
     id: "prod-5",
@@ -99,6 +110,8 @@ const INITIAL_PRODUCTS: Product[] = [
     imageUrl: "https://images.unsplash.com/photo-1598170845058-32b9d6a5da37?w=500&auto=format&fit=crop&q=60",
     tag: "特惠日常",
     inStock: true,
+    isActive: true,
+    showMarketPrice: true,
   },
   {
     id: "prod-6",
@@ -110,6 +123,8 @@ const INITIAL_PRODUCTS: Product[] = [
     imageUrl: "https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=500&auto=format&fit=crop&q=60",
     tag: "沙瓤濃香",
     inStock: true,
+    isActive: true,
+    showMarketPrice: true,
   },
   {
     id: "prod-7",
@@ -121,6 +136,8 @@ const INITIAL_PRODUCTS: Product[] = [
     imageUrl: "https://images.unsplash.com/photo-1597362925123-77861d3fbac7?w=500&auto=format&fit=crop&q=60",
     tag: "清甜滾湯",
     inStock: true,
+    isActive: true,
+    showMarketPrice: true,
   },
   {
     id: "prod-8",
@@ -132,6 +149,8 @@ const INITIAL_PRODUCTS: Product[] = [
     imageUrl: "https://images.unsplash.com/photo-1459411621453-7b03977f4bfc?w=500&auto=format&fit=crop&q=60",
     tag: "健康輕食",
     inStock: true,
+    isActive: true,
+    showMarketPrice: true,
   },
 ];
 
@@ -327,7 +346,16 @@ function ensureDb(): DbSchema {
     
     // 平滑升级字段
     if (!data.config) data.config = INITIAL_CONFIG;
-    if (!data.products || data.products.length === 0) data.products = INITIAL_PRODUCTS;
+    if (data.config.showMarketPriceComparison === undefined) data.config.showMarketPriceComparison = true;
+    if (!data.products || data.products.length === 0) {
+      data.products = INITIAL_PRODUCTS;
+    } else {
+      data.products = data.products.map((p: any) => ({
+        ...p,
+        isActive: p.isActive !== undefined ? p.isActive : true,
+        showMarketPrice: p.showMarketPrice !== undefined ? p.showMarketPrice : true,
+      }));
+    }
     if (!data.orders) data.orders = [];
     if (!data.buildings || data.buildings.length < 14) data.buildings = SO_UK_BUILDINGS;
     
@@ -490,10 +518,22 @@ export const db = {
     const newProd: Product = {
       ...prod,
       id: `prod-${Date.now()}`,
+      isActive: prod.isActive !== undefined ? prod.isActive : true,
+      showMarketPrice: prod.showMarketPrice !== undefined ? prod.showMarketPrice : true,
+      inStock: prod.inStock !== undefined ? prod.inStock : true,
     };
     store.products.push(newProd);
     writeDb(store);
     return newProd;
+  },
+
+  deleteProduct(id: string): boolean {
+    const store = ensureDb();
+    const idx = store.products.findIndex((p) => p.id === id);
+    if (idx < 0) return false;
+    store.products.splice(idx, 1);
+    writeDb(store);
+    return true;
   },
 
   // 6. 订单流转与佣金分账

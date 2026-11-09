@@ -54,13 +54,16 @@ export interface Customer {
 export interface Product {
   id: string;
   nameZh: string;           // 菜品名称，如：寧夏菜心苗
-  subTitle: string;         // 规格与卖点，如：足500g保鮮裝 · 爽脆鮮嫩
+  subTitle: string;         // 规格与卖点描述，如：足500g保鮮裝 · 爽脆鮮嫩
   priceHkd: number;         // 街坊特惠零售价 (HK$)
-  marketPriceHkd: number;   // 旺角街市参考价 (HK$)
-  netWeight: string;        // 净重，如：500g
+  marketPriceHkd?: number;  // 旺角街市参考价 (HK$)
+  showMarketPrice?: boolean;// 【打勾控制】：是否对比/展示街市参考价 (打勾就有，不打勾就没有)
+  netWeight: string;        // 净重/规格标牌，如：500g 或 足500T 或 約2-3條
   imageUrl: string;         // 展示图片
-  tag?: string;             // 标签，如：必搶爆款 / 街坊最愛
-  inStock: boolean;         // 是否有货
+  tag?: string;             // 标签，如：必搶爆款 / 街坊最愛 / 當造推薦
+  inStock: boolean;         // 库存状态：是否有货
+  isActive?: boolean;       // 【打勾控制】：是否上架显示 (打勾上架，不打勾隐藏下架)
+  category?: string;        // 分类，如：精選葉菜、爽脆瓜果、滋補煲湯
 }
 
 export interface OrderItem {
@@ -114,6 +117,9 @@ export interface AppConfig {
 
   enableReferralPoints: boolean;   // 是否启用街坊转介绍买菜积分 (打勾启用)
   referralPointsPerOrder: number;  // 推荐人每单赠送买菜积分 (默认 100)
+
+  // 【全局展示打勾开关】
+  showMarketPriceComparison: boolean; // 是否全局显示旺角街市参考价对比 (打勾显示对比，不打勾则全站隐藏)
 }
 
 export interface RegisterPayload {
