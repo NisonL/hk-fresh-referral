@@ -8,17 +8,17 @@ import {
   Plus,
   Minus,
   CheckCircle2,
-  Share2,
   Gift,
   ArrowRight,
-  ShieldCheck,
   Clock,
   Phone,
   Copy,
   ChevronRight,
   Check,
   Send,
-  Info,
+  Coins,
+  Search,
+  UserCheck,
 } from "lucide-react";
 import { Product, AppConfig } from "@/types";
 
@@ -27,6 +27,9 @@ export default function OrderPage() {
   const [config, setConfig] = useState<AppConfig | null>(null);
   const [cart, setCart] = useState<{ [productId: string]: number }>({});
   const [loading, setLoading] = useState(true);
+
+  // 推荐人识别 (从 ?ref=91112233 读取)
+  const [referrerPhone, setReferrerPhone] = useState<string | null>(null);
 
   // 结账弹窗状态
   const [checkoutOpen, setCheckoutOpen] = useState(false);
@@ -41,8 +44,20 @@ export default function OrderPage() {
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
 
+  // 积分钱包查询与兑换状态
+  const [walletModalOpen, setWalletModalOpen] = useState(false);
+  const [walletPhone, setWalletPhone] = useState("");
+  const [walletLoading, setWalletLoading] = useState(false);
+  const [walletData, setWalletData] = useState<any>(null);
+  const [redeemSuccessMsg, setRedeemSuccessMsg] = useState("");
+
   useEffect(() => {
     fetchData();
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const ref = params.get("ref");
+      if (ref) setReferrerPhone(ref);
+    }
   }, []);
 
   const fetchData = async () => {
@@ -120,6 +135,7 @@ export default function OrderPage() {
           flatNo,
           items: orderItems,
           totalAmountHkd: +totalAmountHkd.toFixed(2),
+          referrerPhone: referrerPhone || undefined,
         }),
       });
 
@@ -132,6 +148,39 @@ export default function OrderPage() {
       alert(err.message || "系統繁忙，請稍後再試");
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const queryPointsWallet = async (phoneToQuery: string) => {
+    if (!phoneToQuery.trim()) return;
+    setWalletLoading(true);
+    setRedeemSuccessMsg("");
+    try {
+      const res = await fetch(`/api/customer/points?phone=${phoneToQuery.trim()}`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "查詢失敗");
+      setWalletData(data);
+    } catch (err: any) {
+      alert(err.message || "查詢失敗，請檢查電話號碼");
+    } finally {
+      setWalletLoading(false);
+    }
+  };
+
+  const handleRedeemPoints = async () => {
+    if (!walletPhone.trim()) return;
+    try {
+      const res = await fetch("/api/customer/points", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: walletPhone, points: 100 }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "兌換失敗");
+      setRedeemSuccessMsg(data.message);
+      queryPointsWallet(walletPhone);
+    } catch (err: any) {
+      alert(err.message);
     }
   };
 
@@ -153,8 +202,9 @@ export default function OrderPage() {
   };
 
   const handleCopyReferral = () => {
-    const inviteUrl = typeof window !== "undefined" ? `${window.location.origin}/join/HUA888?ref=${phone || "888"}` : "";
-    const text = `【蘇屋街坊福利】東莞潤豐基地直供！新鮮蔬菜足500g一斤裝比街市平3成，清晨 07:15-08:00 專人掛防盜鐵閘外。用我呢個鏈接首次買菜，你有一包特惠菜，我都有一包積分換青菜：\n${inviteUrl}`;
+    const myPhone = phone || walletPhone || "91112233";
+    const inviteUrl = typeof window !== "undefined" ? `${window.location.origin}/?ref=${myPhone}` : "";
+    const text = `【蘇屋街坊福利】東莞潤豐基地直供！新鮮蔬菜足500g一斤裝比街市平3成，清晨 07:15-08:00 專人掛防盜鐵閘把手。用我呢個鏈接首次買菜，你有一包特惠菜，我都有一包免費青菜：\n${inviteUrl}`;
     navigator.clipboard.writeText(text);
     setCopiedLink(true);
     setTimeout(() => setCopiedLink(false), 2500);
@@ -189,36 +239,60 @@ export default function OrderPage() {
             {config?.slogan || "源頭直供 · 晨採午達 · 足500g一斤裝 · 街坊特惠比街市平3成"}
           </p>
 
+          {/* 邻里转介绍专属提示 (当 URL 带有 ?ref= 时自动触发) */}
+          {referrerPhone && (
+            <div className="mt-3 bg-emerald-900/80 border border-yellow-400/60 rounded-xl p-2.5 text-xs text-yellow-200 flex items-center gap-2 animate-in fade-in">
+              <UserCheck className="w-4 h-4 text-yellow-400 flex-shrink-0" />
+              <span>
+                鄰舍福利：您正通過熱心街坊 <b>(+852 {referrerPhone})</b> 的專屬分享選購！本次下單雙方皆可積累買菜積分換青菜！
+              </span>
+            </div>
+          )}
+
           {/* 晨早铁闸挂袋交付约定通知 */}
-          <div className="mt-4 bg-emerald-800/60 border border-emerald-600/50 rounded-xl p-3 text-xs leading-relaxed text-emerald-50">
+          <div className="mt-3 bg-emerald-800/60 border border-emerald-600/50 rounded-xl p-3 text-xs leading-relaxed text-emerald-50">
             <div className="flex items-center gap-1.5 font-bold text-yellow-300 mb-1">
               <Clock className="w-3.5 h-3.5" />
               <span>晨早防盜鐵閘掛袋便民約定 (07:15 - 08:00)</span>
             </div>
             <p className="text-[11px] opacity-90">
-              配送員清晨將 500g 保鮮蔬菜懸掛於閣下鐵閘把手，請於 08:30 前取入屋內。全港首創：次日免費同址補送新鮮蔬菜，守護街坊一日三餐！
+              配送員清晨將 500g 保鮮蔬菜懸掛於鐵閘外側把手，請於 08:30 前取入屋內。全港首創：次日免費同址補送新鮮蔬菜，守護街坊一日三餐！
             </p>
           </div>
 
-          {/* 推荐街坊得青菜 Banner */}
-          <div
-            onClick={() => setShareModalOpen(true)}
-            className="mt-3 bg-gradient-to-r from-amber-400 to-orange-400 text-slate-900 rounded-xl p-3 flex items-center justify-between shadow-sm cursor-pointer hover:shadow-md transition active:scale-[0.99]"
-          >
-            <div className="flex items-center gap-2.5">
-              <div className="p-2 bg-white/90 rounded-lg text-orange-600 shadow-sm">
-                <Gift className="w-5 h-5" />
-              </div>
-              <div>
-                <div className="text-xs font-black flex items-center gap-1">
-                  <span>🎁 推薦街坊買菜，免費換新鮮青菜！</span>
-                </div>
-                <div className="text-[11px] text-slate-800 font-medium">
-                  每成功推薦 1 戶鄰居，送 100 買菜積分（可兌換 1 包新鮮菜心）
+          {/* 核心双功能入口：推荐得青菜 + 查买菜积分钱包 */}
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            <div
+              onClick={() => setShareModalOpen(true)}
+              className="bg-gradient-to-r from-amber-400 to-orange-400 text-slate-900 rounded-xl p-2.5 flex items-center justify-between shadow-sm cursor-pointer hover:shadow transition active:scale-[0.98]"
+            >
+              <div className="flex items-center gap-2">
+                <Gift className="w-4 h-4 text-orange-700 flex-shrink-0" />
+                <div className="text-[11px] font-black leading-tight">
+                  推薦鄰居<br />
+                  <span className="text-[10px] font-bold text-orange-900">得買菜積分</span>
                 </div>
               </div>
+              <ChevronRight className="w-4 h-4 text-slate-700" />
             </div>
-            <ChevronRight className="w-5 h-5 text-slate-800" />
+
+            <div
+              onClick={() => {
+                setWalletPhone(phone || "91112233");
+                queryPointsWallet(phone || "91112233");
+                setWalletModalOpen(true);
+              }}
+              className="bg-emerald-800 text-white border border-emerald-500/50 rounded-xl p-2.5 flex items-center justify-between shadow-sm cursor-pointer hover:bg-emerald-800/90 transition active:scale-[0.98]"
+            >
+              <div className="flex items-center gap-2">
+                <Coins className="w-4 h-4 text-yellow-300 flex-shrink-0" />
+                <div className="text-[11px] font-black leading-tight">
+                  我的買菜積分<br />
+                  <span className="text-[10px] text-emerald-200">查積分·換青菜</span>
+                </div>
+              </div>
+              <ChevronRight className="w-4 h-4 text-emerald-300" />
+            </div>
           </div>
         </div>
       </header>
@@ -277,7 +351,6 @@ export default function OrderPage() {
                   key={p.id}
                   className="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-3.5 hover:border-emerald-300 transition"
                 >
-                  {/* 商品图片 */}
                   <div className="relative w-20 h-20 rounded-xl overflow-hidden bg-slate-100 flex-shrink-0">
                     <img
                       src={p.imageUrl}
@@ -291,7 +364,6 @@ export default function OrderPage() {
                     )}
                   </div>
 
-                  {/* 商品信息 */}
                   <div className="flex-1 min-w-0">
                     <h3 className="font-bold text-slate-900 text-sm truncate">{p.nameZh}</h3>
                     <p className="text-[11px] text-slate-400 truncate mt-0.5">{p.subTitle}</p>
@@ -309,7 +381,6 @@ export default function OrderPage() {
                     </div>
                   </div>
 
-                  {/* 数量调节器 */}
                   <div className="flex items-center gap-2">
                     {qty > 0 && (
                       <>
@@ -363,7 +434,7 @@ export default function OrderPage() {
         </div>
       )}
 
-      {/* 极简下订与登记弹窗 */}
+      {/* 结账登记弹窗 */}
       {checkoutOpen && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in">
           <div className="bg-white w-full max-w-md rounded-t-[2rem] sm:rounded-2xl p-6 max-h-[90vh] overflow-y-auto">
@@ -452,7 +523,6 @@ export default function OrderPage() {
                     />
                   </div>
 
-                  {/* 订单明细清单 */}
                   <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
                     <div className="font-bold text-slate-600 mb-1.5 flex justify-between">
                       <span>訂單摘要</span>
@@ -486,7 +556,6 @@ export default function OrderPage() {
                 </button>
               </form>
             ) : (
-              /* 提交成功页面：无支付直接拉起 WhatsApp/微信对账 */
               <div className="text-center py-4 space-y-4">
                 <div className="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto">
                   <CheckCircle2 className="w-7 h-7" />
@@ -504,7 +573,13 @@ export default function OrderPage() {
                   </p>
                 </div>
 
-                {/* WhatsApp 一键发送对账 */}
+                {/* 积分返还说明卡 */}
+                {submittedOrder.referrerPhone && (
+                  <div className="bg-amber-50 border border-amber-200 rounded-xl p-2.5 text-xs text-amber-900 text-left">
+                    🌱 <b>買菜積分已入賬</b>：本次訂單已成功為推薦街坊 (+852 {submittedOrder.referrerPhone}) 贈送 100 買菜積分！您也已成為註冊會員，隨時可推薦鄰里賺積分換免費青菜！
+                  </div>
+                )}
+
                 <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-200 text-left space-y-2.5">
                   <div className="text-xs font-bold text-emerald-950 flex items-center gap-1.5">
                     <Send className="w-4 h-4 text-emerald-600" />
@@ -539,6 +614,117 @@ export default function OrderPage() {
         </div>
       )}
 
+      {/* 积分钱包与换青菜弹窗 */}
+      {walletModalOpen && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in">
+          <div className="bg-white w-full max-w-sm rounded-2xl p-5 space-y-4">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+              <h3 className="font-black text-slate-900 text-sm flex items-center gap-1.5">
+                <Coins className="w-4 h-4 text-yellow-500" />
+                <span>我的買菜積分錢包</span>
+              </h3>
+              <button
+                onClick={() => setWalletModalOpen(false)}
+                className="text-xs text-slate-400 hover:text-slate-600"
+              >
+                關閉
+              </button>
+            </div>
+
+            <div className="flex gap-2">
+              <input
+                type="tel"
+                maxLength={8}
+                value={walletPhone}
+                onChange={(e) => setWalletPhone(e.target.value.replace(/\D/g, ""))}
+                placeholder="輸入 8 位香港電話查詢"
+                className="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold"
+              />
+              <button
+                onClick={() => queryPointsWallet(walletPhone)}
+                disabled={walletLoading}
+                className="bg-emerald-600 text-white px-3 py-2 rounded-xl text-xs font-bold"
+              >
+                {walletLoading ? "..." : "查詢"}
+              </button>
+            </div>
+
+            {/* 快速体验测试号按钮 */}
+            <div className="flex gap-1.5 text-[10px] text-slate-400 items-center">
+              <span>快速測試：</span>
+              <button
+                onClick={() => {
+                  setWalletPhone("91112233");
+                  queryPointsWallet("91112233");
+                }}
+                className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-2 py-0.5 rounded font-bold"
+              >
+                陳太 (91112233)
+              </button>
+              <button
+                onClick={() => {
+                  setWalletPhone("93334455");
+                  queryPointsWallet("93334455");
+                }}
+                className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-2 py-0.5 rounded font-bold"
+              >
+                張太 (93334455)
+              </button>
+            </div>
+
+            {walletData && (
+              <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3.5 space-y-2.5">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <div className="font-black text-slate-900 text-sm">
+                      {walletData.customer?.realName || "熱心街坊"}
+                    </div>
+                    <div className="text-[11px] text-slate-500">
+                      {walletData.customer?.buildingName || "蘇屋邨"} {walletData.customer?.flatNo || ""}
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-xl font-black text-emerald-700">
+                      {walletData.availablePoints}
+                    </span>
+                    <span className="text-[10px] text-emerald-600 ml-1 font-bold">積分</span>
+                  </div>
+                </div>
+
+                <div className="bg-white/80 p-2.5 rounded-lg text-xs space-y-1">
+                  <div className="flex justify-between font-bold text-slate-700">
+                    <span>可免費換領：</span>
+                    <span className="text-orange-600">{walletData.canRedeemVeggies} 包足斤新鮮青菜</span>
+                  </div>
+                  <div className="text-[10px] text-slate-400">
+                    * 規則：每 100 積分可隨單免費兌換 1 包 500g 寧夏菜心
+                  </div>
+                </div>
+
+                {walletData.availablePoints >= 100 ? (
+                  <button
+                    onClick={handleRedeemPoints}
+                    className="w-full bg-orange-500 hover:bg-orange-600 text-white font-black py-2 rounded-xl text-xs shadow transition active:scale-95"
+                  >
+                    🎉 立即使用 100 積分兌換 1 包青菜！
+                  </button>
+                ) : (
+                  <p className="text-[10px] text-center text-slate-400">
+                    再邀請 1 位鄰居買菜，即可積滿 100 分免費換領！
+                  </p>
+                )}
+
+                {redeemSuccessMsg && (
+                  <div className="bg-emerald-100 border border-emerald-300 text-emerald-800 text-[11px] font-bold p-2 rounded-lg text-center animate-in fade-in">
+                    {redeemSuccessMsg}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* 推荐街坊得青菜弹窗 */}
       {shareModalOpen && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in">
@@ -559,7 +745,7 @@ export default function OrderPage() {
             <div className="bg-amber-50 rounded-xl p-3 text-xs leading-relaxed text-amber-900">
               <p className="font-bold mb-1">🌱 街坊互助福利機制：</p>
               <p className="text-[11px] text-amber-800">
-                每推薦 1 位鄰舍在蘇屋邨下單，您將獲得 100 買菜積分（滿 100 分即可隨單免費兌換 500g 寧夏菜心一包，零現金門檻，吃新鮮健康菜）！
+                將您的專屬鏈接分享給蘇屋邨鄰居，鄰居成功下單後，您將自動獲得 <b>100 買菜積分</b>（每 100 分直接兌換 1 包新鮮菜心，零現金、不佔便宜、吃健康菜）！
               </p>
             </div>
 
@@ -568,7 +754,7 @@ export default function OrderPage() {
               className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-1.5 shadow active:scale-95 transition"
             >
               {copiedLink ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-              <span>{copiedLink ? "已複製邀請文案與鏈接！" : "一鍵複製專屬推薦文案"}</span>
+              <span>{copiedLink ? "已複製專屬分享鏈接與文案！" : "一鍵複製專屬推薦文案與鏈接"}</span>
             </button>
           </div>
         </div>

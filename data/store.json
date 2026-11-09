@@ -18,37 +18,99 @@
       "id": "bldg-peony",
       "estateId": "estate-so-uk",
       "nameZh": "牡丹樓",
-      "blockCode": "PEONY"
+      "blockCode": "PEONY",
+      "assignedLeaderId": "leader-hua"
     },
     {
       "id": "bldg-camellia",
       "estateId": "estate-so-uk",
       "nameZh": "茶花樓",
-      "blockCode": "CAMELLIA"
+      "blockCode": "CAMELLIA",
+      "assignedLeaderId": null
+    },
+    {
+      "id": "bldg-jinju",
+      "estateId": "estate-so-uk",
+      "nameZh": "金菊樓",
+      "blockCode": "JINJU",
+      "assignedLeaderId": null
     },
     {
       "id": "bldg-azalea",
       "estateId": "estate-so-uk",
       "nameZh": "杜鵑樓",
-      "blockCode": "AZALEA"
+      "blockCode": "AZALEA",
+      "assignedLeaderId": null
     },
     {
       "id": "bldg-greenwillow",
       "estateId": "estate-so-uk",
       "nameZh": "綠柳樓",
-      "blockCode": "GREENWILLOW"
+      "blockCode": "GREENWILLOW",
+      "assignedLeaderId": null
     },
     {
-      "id": "bldg-oi-tak",
-      "estateId": "estate-yau-oi",
-      "nameZh": "愛德樓",
-      "blockCode": "OI_TAK"
+      "id": "bldg-cherry",
+      "estateId": "estate-so-uk",
+      "nameZh": "櫻桃樓",
+      "blockCode": "CHERRY",
+      "assignedLeaderId": null
     },
     {
-      "id": "bldg-oi-lai",
-      "estateId": "estate-yau-oi",
-      "nameZh": "愛禮樓",
-      "blockCode": "OI_LAI"
+      "id": "bldg-lotus",
+      "estateId": "estate-so-uk",
+      "nameZh": "荷花樓",
+      "blockCode": "LOTUS",
+      "assignedLeaderId": null
+    },
+    {
+      "id": "bldg-orchid",
+      "estateId": "estate-so-uk",
+      "nameZh": "蘭花樓",
+      "blockCode": "ORCHID",
+      "assignedLeaderId": null
+    },
+    {
+      "id": "bldg-marigold",
+      "estateId": "estate-so-uk",
+      "nameZh": "壽菊樓",
+      "blockCode": "MARIGOLD",
+      "assignedLeaderId": null
+    },
+    {
+      "id": "bldg-lily",
+      "estateId": "estate-so-uk",
+      "nameZh": "百合樓",
+      "blockCode": "LILY",
+      "assignedLeaderId": null
+    },
+    {
+      "id": "bldg-maple",
+      "estateId": "estate-so-uk",
+      "nameZh": "楓林樓",
+      "blockCode": "MAPLE",
+      "assignedLeaderId": null
+    },
+    {
+      "id": "bldg-lilac",
+      "estateId": "estate-so-uk",
+      "nameZh": "丁香樓",
+      "blockCode": "LILAC",
+      "assignedLeaderId": null
+    },
+    {
+      "id": "bldg-gladiolus",
+      "estateId": "estate-so-uk",
+      "nameZh": "劍蘭樓",
+      "blockCode": "GLADIOLUS",
+      "assignedLeaderId": null
+    },
+    {
+      "id": "bldg-begonia",
+      "estateId": "estate-so-uk",
+      "nameZh": "海棠樓",
+      "blockCode": "BEGONIA",
+      "assignedLeaderId": null
     }
   ],
   "leaders": [
@@ -81,6 +143,23 @@
   ],
   "customers": [
     {
+      "id": "cust-1794232509024-877",
+      "hkPhone": "92223344",
+      "realName": "??",
+      "estateId": "estate-so-uk",
+      "estateName": "??????",
+      "buildingId": "bldg-peony",
+      "buildingName": "???",
+      "flatNo": "0802?",
+      "boundLeaderId": "SYSTEM_RUNNER",
+      "boundInviteCode": "PUBLIC",
+      "referrerPhone": "92345678",
+      "pointsBalance": 0,
+      "ordersCount": 1,
+      "totalSpent": 23,
+      "boundAt": "2026-11-09T13:55:09.024Z"
+    },
+    {
       "id": "cust-1793872559365-754",
       "hkPhone": "91998877",
       "realName": "????",
@@ -106,7 +185,8 @@
       "isSeniorCitizen": false,
       "boundLeaderId": "leader-hua",
       "boundInviteCode": "HUA888",
-      "boundAt": "2026-10-28T09:15:00Z"
+      "boundAt": "2026-10-28T09:15:00Z",
+      "pointsBalance": 0
     },
     {
       "id": "cust-2",
@@ -135,6 +215,154 @@
       "boundLeaderId": "leader-hua",
       "boundInviteCode": "HUA888",
       "boundAt": "2026-10-29T16:20:00Z"
+    }
+  ],
+  "config": {
+    "brandName": "供港優鮮",
+    "brandSubtitle": "屋邨直通車",
+    "slogan": "東莞潤豐源頭直供 · 晨採午達 · 街坊特惠比街市平3成",
+    "deliveryNotice": "📢【蘇屋街坊】每日清晨 07:15 - 08:00 晨早防盜鐵閘掛袋便民配送，請於上午 08:30 前取入屋內。次日免費補送新鮮蔬菜，守護街坊一日三餐！",
+    "defaultWhatsAppGroupUrl": "https://chat.whatsapp.com/demo-so-uk-official",
+    "defaultWechatId": "hk_fresh_official",
+    "supportWhatsApp": "85291234567",
+    "freeShippingThreshold": 18.9,
+    "runnerDeliveryFee": 2,
+    "leaderCommissionRate": 2,
+    "mentorAllowanceRate": 0.5,
+    "referralPointsPerOrder": 100
+  },
+  "products": [
+    {
+      "id": "prod-1",
+      "nameZh": "寧夏菜心苗 (精選足斤)",
+      "subTitle": "足500g保鮮裝 · 爽脆鮮甜嫩無渣 · 供港爆款",
+      "priceHkd": 9.1,
+      "marketPriceHkd": 14,
+      "netWeight": "500g",
+      "imageUrl": "https://images.unsplash.com/photo-1540420773420-3366772f4999?w=500&auto=format&fit=crop&q=60",
+      "tag": "必搶爆款",
+      "inStock": true
+    },
+    {
+      "id": "prod-2",
+      "nameZh": "東莞甜脆生菜 (綠色無公害)",
+      "subTitle": "足500g保鮮裝 · 晨早露水摘採 · 炒灼皆宜",
+      "priceHkd": 7,
+      "marketPriceHkd": 11,
+      "netWeight": "500g",
+      "imageUrl": "https://images.unsplash.com/photo-1622206151226-18ca2c9ab4a1?w=500&auto=format&fit=crop&q=60",
+      "tag": "街坊最愛",
+      "inStock": true
+    },
+    {
+      "id": "prod-3",
+      "nameZh": "鮮嫩小芥蘭 (清甜爽口)",
+      "subTitle": "足500g保鮮裝 · 潤豐出廠預冷 · 薑汁炒極正",
+      "priceHkd": 7.9,
+      "marketPriceHkd": 12,
+      "netWeight": "500g",
+      "imageUrl": "https://images.unsplash.com/photo-1576045057995-568f588f82fb?w=500&auto=format&fit=crop&q=60",
+      "tag": "清甜嫩口",
+      "inStock": true
+    },
+    {
+      "id": "prod-4",
+      "nameZh": "爽脆無渣青瓜 (本地農場直運)",
+      "subTitle": "足500g (約2條裝) · 翠綠多汁 · 拍青瓜開胃必備",
+      "priceHkd": 6.9,
+      "marketPriceHkd": 10,
+      "netWeight": "500g",
+      "imageUrl": "https://images.unsplash.com/photo-1604977042946-1eecc30f269e?w=500&auto=format&fit=crop&q=60",
+      "tag": "消暑必選",
+      "inStock": true
+    },
+    {
+      "id": "prod-5",
+      "nameZh": "高山甜嫩白菜仔 (鮮嫩幼滑)",
+      "subTitle": "足500g保鮮裝 · 葉嫩梗甜 · 滾湯快炒極佳",
+      "priceHkd": 6.8,
+      "marketPriceHkd": 10,
+      "netWeight": "500g",
+      "imageUrl": "https://images.unsplash.com/photo-1598170845058-32b9d6a5da37?w=500&auto=format&fit=crop&q=60",
+      "tag": "特惠日常",
+      "inStock": true
+    },
+    {
+      "id": "prod-6",
+      "nameZh": "潤豐甜砂番茄 (自然熟甜)",
+      "subTitle": "足500g (約3-4個) · 果香濃郁沙瓤 · 番茄炒蛋首選",
+      "priceHkd": 7.8,
+      "marketPriceHkd": 12,
+      "netWeight": "500g",
+      "imageUrl": "https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=500&auto=format&fit=crop&q=60",
+      "tag": "沙瓤濃香",
+      "inStock": true
+    },
+    {
+      "id": "prod-7",
+      "nameZh": "綠野水瓜/絲瓜 (鮮嫩清甜)",
+      "subTitle": "足500g (1條裝) · 刮皮清甜嫩滑 · 魚湯滾絲瓜絕配",
+      "priceHkd": 8.5,
+      "marketPriceHkd": 13,
+      "netWeight": "500g",
+      "imageUrl": "https://images.unsplash.com/photo-1597362925123-77861d3fbac7?w=500&auto=format&fit=crop&q=60",
+      "tag": "清甜滾湯",
+      "inStock": true
+    },
+    {
+      "id": "prod-8",
+      "nameZh": "鮮甜有機西蘭花 (緊實脆嫩)",
+      "subTitle": "足500g (1個大顆裝) · 蕾粒細密嫩翠 · 營養滿分",
+      "priceHkd": 8.9,
+      "marketPriceHkd": 14,
+      "netWeight": "500g",
+      "imageUrl": "https://images.unsplash.com/photo-1459411621453-7b03977f4bfc?w=500&auto=format&fit=crop&q=60",
+      "tag": "健康輕食",
+      "inStock": true
+    }
+  ],
+  "orders": [
+    {
+      "id": "ord-1794232509025",
+      "orderNo": "#SU-7123",
+      "customerPhone": "92223344",
+      "customerName": "??",
+      "estateName": "??????",
+      "buildingName": "???",
+      "flatNo": "0802?",
+      "items": [
+        {
+          "nameZh": "????? (????)",
+          "productId": "prod-1",
+          "priceHkd": 9.1,
+          "qty": 1,
+          "netWeight": "500g"
+        },
+        {
+          "nameZh": "?????? (?????)",
+          "productId": "prod-2",
+          "priceHkd": 7,
+          "qty": 1,
+          "netWeight": "500g"
+        },
+        {
+          "nameZh": "?????? (??????)",
+          "productId": "prod-4",
+          "priceHkd": 6.9,
+          "qty": 1,
+          "netWeight": "500g"
+        }
+      ],
+      "totalAmountHkd": 23,
+      "status": "PENDING_CONFIRMATION",
+      "directLeaderId": "SYSTEM_RUNNER",
+      "directLeaderCommission": 0,
+      "mentorLeaderId": null,
+      "mentorAllowance": 0,
+      "runnerDeliveryFee": 2,
+      "referrerPhone": "92345678",
+      "referrerBonusPoints": 100,
+      "createdAt": "2026-11-09T13:55:09.025Z"
     }
   ]
 }

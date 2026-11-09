@@ -490,6 +490,28 @@ export const db = {
     return ensureDb().orders;
   },
 
+  getCustomerPoints(phone: string): { customer: Customer | null; availablePoints: number; canRedeemVeggies: number } {
+    const store = ensureDb();
+    const clean = phone.trim().replace(/\D/g, "");
+    const cust = store.customers.find((c) => c.hkPhone === clean) || null;
+    const availablePoints = cust?.pointsBalance || 0;
+    return {
+      customer: cust,
+      availablePoints,
+      canRedeemVeggies: Math.floor(availablePoints / (store.config.referralPointsPerOrder || 100)),
+    };
+  },
+
+  redeemCustomerPoints(phone: string, pointsToRedeem: number = 100): boolean {
+    const store = ensureDb();
+    const clean = phone.trim().replace(/\D/g, "");
+    const cust = store.customers.find((c) => c.hkPhone === clean);
+    if (!cust || (cust.pointsBalance || 0) < pointsToRedeem) return false;
+    cust.pointsBalance = (cust.pointsBalance || 0) - pointsToRedeem;
+    writeDb(store);
+    return true;
+  },
+
   createOrder(payload: {
     customerPhone: string;
     customerName: string;
@@ -499,25 +521,61 @@ export const db = {
     items: { productId: string; nameZh: string; qty: number; priceHkd: number; netWeight: string }[];
     totalAmountHkd: number;
     inviteCode?: string;
+    referrerPhone?: string;
   }): Order {
     const store = ensureDb();
     const config = store.config;
     const cleanPhone = payload.customerPhone.trim().replace(/\D/g, "");
+    const cleanRefPhone = payload.referrerPhone ? payload.referrerPhone.trim().replace(/\D/g, "") : null;
 
-    // 查找客户
+    // 查找或自动注册客户
     let cust = store.customers.find((c) => c.hkPhone === cleanPhone);
+    const building = store.buildings.find((b) => b.nameZh === payload.buildingName);
+    const assignedLeader = building?.assignedLeaderId
+      ? store.leaders.find((l) => l.id === building.assignedLeaderId)
+      : null;
+
+    if (!cust) {
+      // 首次下单自动登记入册
+      cust = {
+        id: `cust-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+        hkPhone: cleanPhone,
+        realName: payload.customerName.trim(),
+        estateId: "estate-so-uk",
+        estateName: payload.estateName,
+        buildingId: building?.id || "bldg-peony",
+        buildingName: payload.buildingName,
+        flatNo: payload.flatNo.trim(),
+        boundLeaderId: assignedLeader ? assignedLeader.id : "SYSTEM_RUNNER",
+        boundInviteCode: assignedLeader ? assignedLeader.inviteCode : "PUBLIC",
+        referrerPhone: cleanRefPhone && cleanRefPhone !== cleanPhone ? cleanRefPhone : null,
+        pointsBalance: 0,
+        ordersCount: 0,
+        totalSpent: 0,
+        boundAt: new Date().toISOString(),
+      };
+      store.customers.unshift(cust);
+    } else {
+      // 若老客户之前无推荐人，且本次由推荐人链接进入，则补充记录推荐人
+      if (!cust.referrerPhone && cleanRefPhone && cleanRefPhone !== cleanPhone) {
+        cust.referrerPhone = cleanRefPhone;
+      }
+    }
+
     let directLeaderId = cust ? cust.boundLeaderId : null;
     let mentorLeaderId: string | null = null;
     let directLeaderCommission = 0;
     let mentorAllowance = 0;
     let referrerBonusPoints = 0;
 
+    // 1. 直属楼长分润
     if (directLeaderId && directLeaderId !== "SYSTEM_RUNNER") {
       const leader = store.leaders.find((l) => l.id === directLeaderId);
       if (leader && leader.status === "ACTIVE") {
         directLeaderCommission = config.leaderCommissionRate;
         leader.totalCommissionEarned = (leader.totalCommissionEarned || 0) + directLeaderCommission;
 
+        // 2. 带教导师津贴
         if (leader.parentLeaderId) {
           const mentor = store.leaders.find((m) => m.id === leader.parentLeaderId);
           if (mentor && mentor.status === "ACTIVE") {
@@ -529,20 +587,37 @@ export const db = {
       }
     }
 
-    // 转介绍街坊买菜积分返利
-    if (cust && cust.referrerPhone) {
-      const referrer = store.customers.find((c) => c.hkPhone === cust.referrerPhone);
-      if (referrer) {
-        referrerBonusPoints = config.referralPointsPerOrder;
-        referrer.pointsBalance = (referrer.pointsBalance || 0) + referrerBonusPoints;
+    // 3. 转介绍街坊买菜积分返利（核心：买菜积分直接换新鲜蔬菜！）
+    const activeRefPhone = cust.referrerPhone || cleanRefPhone;
+    if (activeRefPhone && activeRefPhone !== cleanPhone) {
+      let referrer = store.customers.find((c) => c.hkPhone === activeRefPhone);
+      if (!referrer) {
+        // 如果推荐人尚未下单过，初始化其积分账户
+        referrer = {
+          id: `cust-ref-${Date.now()}`,
+          hkPhone: activeRefPhone,
+          realName: "熱心街坊",
+          estateId: "estate-so-uk",
+          estateName: payload.estateName,
+          buildingId: building?.id || "bldg-peony",
+          buildingName: payload.buildingName,
+          flatNo: "待補充",
+          boundLeaderId: assignedLeader ? assignedLeader.id : "SYSTEM_RUNNER",
+          boundInviteCode: assignedLeader ? assignedLeader.inviteCode : "PUBLIC",
+          pointsBalance: 0,
+          ordersCount: 0,
+          totalSpent: 0,
+          boundAt: new Date().toISOString(),
+        };
+        store.customers.push(referrer);
       }
+      referrerBonusPoints = config.referralPointsPerOrder || 100;
+      referrer.pointsBalance = (referrer.pointsBalance || 0) + referrerBonusPoints;
     }
 
-    // 更新买家统计
-    if (cust) {
-      cust.ordersCount = (cust.ordersCount || 0) + 1;
-      cust.totalSpent = +((cust.totalSpent || 0) + payload.totalAmountHkd).toFixed(2);
-    }
+    // 更新买家消费统计
+    cust.ordersCount = (cust.ordersCount || 0) + 1;
+    cust.totalSpent = +((cust.totalSpent || 0) + payload.totalAmountHkd).toFixed(2);
 
     const orderNo = `#SU-${Math.floor(1000 + Math.random() * 9000)}`;
     const newOrder: Order = {
@@ -561,7 +636,7 @@ export const db = {
       mentorLeaderId,
       mentorAllowance,
       runnerDeliveryFee: config.runnerDeliveryFee,
-      referrerPhone: cust?.referrerPhone || null,
+      referrerPhone: cust.referrerPhone || cleanRefPhone || null,
       referrerBonusPoints,
       createdAt: new Date().toISOString(),
     };

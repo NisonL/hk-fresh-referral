@@ -28,6 +28,7 @@ export async function POST(req: NextRequest) {
       items: body.items,
       totalAmountHkd: body.totalAmountHkd,
       inviteCode: body.inviteCode,
+      referrerPhone: body.referrerPhone,
     });
 
     const config = db.getConfig();
