@@ -4,24 +4,34 @@ import { db } from "@/lib/db";
 export async function GET() {
   const leaders = db.getAllLeaders();
   const customers = db.getAllCustomers();
+  const orders = db.getAllOrders();
+  const products = db.getAllProducts();
+  const config = db.getConfig();
+  const buildingStats = db.getBuildingStats();
+  const kocLeaderboard = db.getKocLeaderboard();
 
-  const totalLeaders = leaders.length;
-  const totalCustomers = customers.length;
-  const seniorCount = customers.filter((c) => c.isSeniorCitizen).length;
+  const totalOrders = orders.length;
+  const totalGmv = orders.reduce((sum, o) => sum + (o.totalAmountHkd || 0), 0);
+  const totalCommissions = orders.reduce(
+    (sum, o) => sum + (o.directLeaderCommission || 0) + (o.mentorAllowance || 0),
+    0
+  );
 
   return NextResponse.json({
     stats: {
-      totalLeaders,
-      totalCustomers,
-      seniorCount,
+      totalLeaders: leaders.length,
+      totalCustomers: customers.length,
+      totalOrders,
+      totalGmv: +totalGmv.toFixed(2),
+      totalCommissions: +totalCommissions.toFixed(2),
+      blankBuildingsCount: buildingStats.filter((b) => b.status === "VACANT_ACTIVE").length,
     },
-    leaders: leaders.map((l) => {
-      const boundCount = customers.filter((c) => c.boundLeaderId === l.id).length;
-      return {
-        ...l,
-        boundCount,
-      };
-    }),
+    config,
+    buildingStats,
+    kocLeaderboard,
+    leaders,
     customers,
+    products,
+    orders,
   });
 }

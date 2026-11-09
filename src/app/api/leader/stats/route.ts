@@ -18,13 +18,20 @@ export async function GET(request: NextRequest) {
   }
 
   const customers = db.getCustomersByLeaderId(leader.id);
-  const seniorCount = customers.filter((c) => c.isSeniorCitizen).length;
+  const orders = db.getAllOrders().filter((o) => o.directLeaderId === leader.id);
+  const mentorOrders = db.getAllOrders().filter((o) => o.mentorLeaderId === leader.id);
+
+  const directCommission = orders.reduce((sum, o) => sum + (o.directLeaderCommission || 0), 0);
+  const mentorCommission = mentorOrders.reduce((sum, o) => sum + (o.mentorAllowance || 0), 0);
 
   return NextResponse.json({
     leader,
     stats: {
       totalCustomers: customers.length,
-      seniorCustomers: seniorCount,
+      totalOrders: orders.length,
+      directCommission,
+      mentorCommission,
+      totalCommission: directCommission + mentorCommission,
     },
     customers,
   });

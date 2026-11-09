@@ -1,0 +1,229 @@
+{
+  "estates": [
+    {
+      "id": "estate-so-uk",
+      "code": "SO_UK",
+      "nameZh": "深水埗蘇屋邨",
+      "district": "深水埗區"
+    }
+  ],
+  "buildings": [
+    {
+      "id": "bldg-peony",
+      "estateId": "estate-so-uk",
+      "nameZh": "牡丹樓",
+      "blockCode": "PEONY"
+    },
+    {
+      "id": "bldg-jinju",
+      "estateId": "estate-so-uk",
+      "nameZh": "金菊樓",
+      "blockCode": "JINJU"
+    },
+    {
+      "id": "bldg-camellia",
+      "estateId": "estate-so-uk",
+      "nameZh": "茶花樓",
+      "blockCode": "CAMELLIA"
+    }
+  ],
+  "leaders": [
+    {
+      "id": "leader-hua",
+      "inviteCode": "HUA888",
+      "realName": "華姐",
+      "hkPhone": "91234567",
+      "estateId": "estate-so-uk",
+      "estateName": "深水埗蘇屋邨",
+      "buildingId": "bldg-peony",
+      "buildingName": "牡丹樓",
+      "whatsAppGroupUrl": "https://chat.whatsapp.com/demo-peony",
+      "parentLeaderId": null,
+      "status": "ACTIVE",
+      "totalCommissionEarned": 5
+    },
+    {
+      "id": "leader-2233",
+      "inviteCode": "CHAN888",
+      "realName": "陳太 (改名測試)",
+      "hkPhone": "91112233",
+      "estateId": "estate-so-uk",
+      "estateName": "深水埗蘇屋邨",
+      "buildingId": "bldg-jinju",
+      "buildingName": "金菊樓",
+      "whatsAppGroupUrl": "https://chat.whatsapp.com/demo-chan888",
+      "parentLeaderId": "leader-hua",
+      "status": "ACTIVE",
+      "totalCommissionEarned": 4,
+      "promotedAt": "2026-11-09T13:39:55.151Z"
+    }
+  ],
+  "customers": [
+    {
+      "id": "cust-91112233",
+      "hkPhone": "91112233",
+      "realName": "陳太 (改名測試)",
+      "estateId": "estate-so-uk",
+      "estateName": "深水埗蘇屋邨",
+      "buildingId": "bldg-peony",
+      "buildingName": "牡丹樓",
+      "flatNo": "1205室",
+      "boundLeaderId": "leader-hua",
+      "boundInviteCode": "HUA888",
+      "referrerCustomerPhone": null,
+      "createdAt": "2026-11-09T13:39:55.141Z"
+    },
+    {
+      "id": "cust-92223344",
+      "hkPhone": "92223344",
+      "realName": "李生 (User C)",
+      "estateId": "estate-so-uk",
+      "estateName": "深水埗蘇屋邨",
+      "buildingId": "bldg-peony",
+      "buildingName": "牡丹樓",
+      "flatNo": "0802室",
+      "boundLeaderId": "leader-2233",
+      "boundInviteCode": "CHAN888",
+      "referrerCustomerPhone": "91112233",
+      "createdAt": "2026-11-09T13:39:55.144Z"
+    },
+    {
+      "id": "cust-93334455",
+      "hkPhone": "93334455",
+      "realName": "張太 (User D)",
+      "estateId": "estate-so-uk",
+      "estateName": "深水埗蘇屋邨",
+      "buildingId": "bldg-jinju",
+      "buildingName": "金菊樓",
+      "flatNo": "1503室",
+      "boundLeaderId": "leader-2233",
+      "boundInviteCode": "CHAN888",
+      "referrerCustomerPhone": "91112233",
+      "createdAt": "2026-11-09T13:39:55.145Z"
+    },
+    {
+      "id": "cust-94445566",
+      "hkPhone": "94445566",
+      "realName": "梁伯 (User E)",
+      "estateId": "estate-so-uk",
+      "estateName": "深水埗蘇屋邨",
+      "buildingId": "bldg-jinju",
+      "buildingName": "金菊樓",
+      "flatNo": "0401室",
+      "boundLeaderId": "leader-2233",
+      "boundInviteCode": "CHAN888",
+      "referrerCustomerPhone": "91112233",
+      "createdAt": "2026-11-09T13:39:55.146Z"
+    },
+    {
+      "id": "cust-95556677",
+      "hkPhone": "95556677",
+      "realName": "關姐 (User F, 空白網點自來客)",
+      "estateId": "estate-so-uk",
+      "estateName": "深水埗蘇屋邨",
+      "buildingId": "bldg-jinju",
+      "buildingName": "金菊樓",
+      "flatNo": "0905室",
+      "boundLeaderId": "leader-2233",
+      "boundInviteCode": "CHAN888",
+      "referrerCustomerPhone": null,
+      "createdAt": "2026-11-09T13:39:55.147Z"
+    }
+  ],
+  "orders": [
+    {
+      "orderId": "ORD-595148-3344",
+      "customerPhone": "92223344",
+      "customerName": "李生 (User C)",
+      "buildingName": "牡丹樓",
+      "flatNo": "0802室",
+      "amountHkd": 19.9,
+      "itemsDescription": "500g菜心+500g生菜",
+      "directLeaderId": "leader-hua",
+      "directLeaderCommission": 2,
+      "mentorLeaderId": null,
+      "mentorAllowance": 0,
+      "runnerDeliveryFee": 2,
+      "referrerCustomerPhone": "91112233",
+      "referrerBonusPoints": 100,
+      "platformMargin": 4.49,
+      "createdAt": "2026-11-09T13:39:55.149Z"
+    },
+    {
+      "orderId": "ORD-595150-4455",
+      "customerPhone": "93334455",
+      "customerName": "張太 (User D)",
+      "buildingName": "金菊樓",
+      "flatNo": "1503室",
+      "amountHkd": 19.9,
+      "itemsDescription": "500g菜心+500g芥兰",
+      "directLeaderId": "leader-hua",
+      "directLeaderCommission": 2,
+      "mentorLeaderId": null,
+      "mentorAllowance": 0,
+      "runnerDeliveryFee": 2,
+      "referrerCustomerPhone": "91112233",
+      "referrerBonusPoints": 100,
+      "platformMargin": 4.49,
+      "createdAt": "2026-11-09T13:39:55.150Z"
+    },
+    {
+      "orderId": "ORD-595152-4455",
+      "customerPhone": "93334455",
+      "customerName": "張太 (User D)",
+      "buildingName": "金菊樓",
+      "flatNo": "1503室",
+      "amountHkd": 19.9,
+      "itemsDescription": "500g菜心+500g青瓜",
+      "directLeaderId": "leader-2233",
+      "directLeaderCommission": 2,
+      "mentorLeaderId": "leader-hua",
+      "mentorAllowance": 0.5,
+      "runnerDeliveryFee": 2,
+      "referrerCustomerPhone": "91112233",
+      "referrerBonusPoints": 100,
+      "platformMargin": 3.99,
+      "createdAt": "2026-11-09T13:39:55.152Z"
+    },
+    {
+      "orderId": "ORD-595154-6677",
+      "customerPhone": "95556677",
+      "customerName": "關姐 (User F, 空白網點自來客)",
+      "buildingName": "金菊樓",
+      "flatNo": "0905室",
+      "amountHkd": 19.9,
+      "itemsDescription": "500g菠菜+500g番茄",
+      "directLeaderId": "leader-2233",
+      "directLeaderCommission": 2,
+      "mentorLeaderId": "leader-hua",
+      "mentorAllowance": 0.5,
+      "runnerDeliveryFee": 2,
+      "referrerCustomerPhone": null,
+      "referrerBonusPoints": 0,
+      "platformMargin": 3.99,
+      "createdAt": "2026-11-09T13:39:55.154Z"
+    }
+  ],
+  "pointsWallets": {
+    "91112233": {
+      "availablePoints": 300,
+      "totalEarned": 300
+    },
+    "92223344": {
+      "availablePoints": 0,
+      "totalEarned": 0
+    },
+    "93334455": {
+      "availablePoints": 0,
+      "totalEarned": 0
+    },
+    "94445566": {
+      "availablePoints": 0,
+      "totalEarned": 0
+    },
+    "95556677": {
+      "availablePoints": 0,
+      "totalEarned": 0
+    }
+  }
+}

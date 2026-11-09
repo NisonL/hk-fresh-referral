@@ -1,131 +1,598 @@
+"use client";
+
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import {
-  QrCode,
-  Users,
-  ShieldCheck,
-  ArrowRight,
   Sparkles,
-  ExternalLink,
-  Smartphone,
-  Layers,
-  Settings,
+  ShoppingBag,
+  Plus,
+  Minus,
+  CheckCircle2,
+  Share2,
+  Gift,
+  ArrowRight,
+  ShieldCheck,
+  Clock,
+  Phone,
+  Copy,
+  ChevronRight,
+  Check,
+  Send,
+  Info,
 } from "lucide-react";
-import { BRANDING_CONFIG } from "@/config/branding";
+import { Product, AppConfig } from "@/types";
 
-export default function Home() {
+export default function OrderPage() {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [config, setConfig] = useState<AppConfig | null>(null);
+  const [cart, setCart] = useState<{ [productId: string]: number }>({});
+  const [loading, setLoading] = useState(true);
+
+  // 结账弹窗状态
+  const [checkoutOpen, setCheckoutOpen] = useState(false);
+  const [phone, setPhone] = useState("");
+  const [realName, setRealName] = useState("");
+  const [buildingName, setBuildingName] = useState("牡丹樓");
+  const [flatNo, setFlatNo] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [submittedOrder, setSubmittedOrder] = useState<any>(null);
+
+  // 转介绍分享弹窗
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    try {
+      const [prodRes, cfgRes] = await Promise.all([
+        fetch("/api/products"),
+        fetch("/api/admin/config"),
+      ]);
+      const prodData = await prodRes.json();
+      const cfgData = await cfgRes.json();
+      if (prodData.products) setProducts(prodData.products);
+      if (cfgData.config) setConfig(cfgData.config);
+    } catch (err) {
+      console.error("Failed to load initial data", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateCart = (productId: string, delta: number) => {
+    setCart((prev) => {
+      const current = prev[productId] || 0;
+      const next = current + delta;
+      if (next <= 0) {
+        const copy = { ...prev };
+        delete copy[productId];
+        return copy;
+      }
+      return { ...prev, [productId]: next };
+    });
+  };
+
+  const totalItemsCount = Object.values(cart).reduce((sum, qty) => sum + qty, 0);
+  const totalAmountHkd = products.reduce((sum, p) => {
+    const qty = cart[p.id] || 0;
+    return sum + qty * p.priceHkd;
+  }, 0);
+
+  const freeThreshold = config?.freeShippingThreshold || 18.9;
+  const isFreeShipping = totalAmountHkd >= freeThreshold;
+  const diffToFree = +(freeThreshold - totalAmountHkd).toFixed(1);
+
+  const handleOpenCheckout = () => {
+    if (totalItemsCount === 0) return;
+    setCheckoutOpen(true);
+  };
+
+  const handleSubmitOrder = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!phone.trim() || !realName.trim() || !flatNo.trim()) {
+      alert("請填寫完整的電話、稱呼和房號");
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const orderItems = products
+        .filter((p) => (cart[p.id] || 0) > 0)
+        .map((p) => ({
+          productId: p.id,
+          nameZh: p.nameZh,
+          qty: cart[p.id],
+          priceHkd: p.priceHkd,
+          netWeight: p.netWeight,
+        }));
+
+      const res = await fetch("/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          customerPhone: phone,
+          customerName: realName,
+          estateName: "深水埗蘇屋邨",
+          buildingName,
+          flatNo,
+          items: orderItems,
+          totalAmountHkd: +totalAmountHkd.toFixed(2),
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "下單失敗");
+
+      setSubmittedOrder(data.order);
+      setCart({});
+    } catch (err: any) {
+      alert(err.message || "系統繁忙，請稍後再試");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const buildWhatsAppOrderMessage = () => {
+    if (!submittedOrder) return "";
+    const itemsList = submittedOrder.items
+      .map((i: any) => `🥬 ${i.nameZh} x${i.qty}份 (HK$ ${(i.priceHkd * i.qty).toFixed(1)})`)
+      .join("%0A");
+
+    return (
+      `早晨！我已在【供港優鮮】登記晨早自選蔬菜：%0A%0A` +
+      `📌 訂單編號：${submittedOrder.orderNo}%0A` +
+      `🏠 送達地址：蘇屋邨 ${submittedOrder.buildingName} ${submittedOrder.flatNo}%0A` +
+      `👤 街坊稱呼：${submittedOrder.customerName} (${submittedOrder.customerPhone})%0A%0A` +
+      `🛒 訂購清單：%0A${itemsList}%0A%0A` +
+      `💰 實付總額：HK$ ${submittedOrder.totalAmountHkd.toFixed(2)} (滿額包郵·晨早掛閘)%0A%0A` +
+      `請確認訂單及轉數快(FPS)/現金交收方式，唔該晒！`
+    );
+  };
+
+  const handleCopyReferral = () => {
+    const inviteUrl = typeof window !== "undefined" ? `${window.location.origin}/join/HUA888?ref=${phone || "888"}` : "";
+    const text = `【蘇屋街坊福利】東莞潤豐基地直供！新鮮蔬菜足500g一斤裝比街市平3成，清晨 07:15-08:00 專人掛防盜鐵閘外。用我呢個鏈接首次買菜，你有一包特惠菜，我都有一包積分換青菜：\n${inviteUrl}`;
+    navigator.clipboard.writeText(text);
+    setCopiedLink(true);
+    setTimeout(() => setCopiedLink(false), 2500);
+  };
+
   return (
-    <div className="flex-1 flex flex-col p-6 bg-slate-50 text-slate-800">
-      {/* 顶部标识 */}
-      <div className="text-center pt-4 pb-6">
-        <div className="inline-flex items-center space-x-1.5 bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full text-xs font-bold mb-2">
-          <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
-          <span>獨立推薦與登記中樞 V1.0</span>
+    <div className="min-h-screen bg-slate-50 text-slate-800 pb-32">
+      {/* 顶部品牌与安全认证 */}
+      <header className="bg-emerald-700 text-white pt-6 pb-8 px-4 rounded-b-[2rem] shadow-md">
+        <div className="max-w-md mx-auto">
+          <div className="flex items-center justify-between mb-3">
+            <div className="inline-flex items-center space-x-1.5 bg-emerald-800/80 text-emerald-200 px-3 py-1 rounded-full text-xs font-semibold">
+              <Sparkles className="w-3.5 h-3.5 text-yellow-300" />
+              <span>廣東東莞石碣潤豐直發 · 文錦渡檢驗檢疫</span>
+            </div>
+            <Link
+              href="/admin"
+              className="text-xs text-emerald-200 hover:text-white underline font-medium"
+            >
+              管理總台
+            </Link>
+          </div>
+
+          <h1 className="text-2xl font-black tracking-tight text-white flex items-center gap-2">
+            <span>{config?.brandName || "供港優鮮"}</span>
+            <span className="text-sm font-bold bg-yellow-400 text-emerald-950 px-2 py-0.5 rounded-lg">
+              {config?.brandSubtitle || "屋邨直通車"}
+            </span>
+          </h1>
+
+          <p className="text-xs text-emerald-100 mt-1.5 leading-relaxed">
+            {config?.slogan || "源頭直供 · 晨採午達 · 足500g一斤裝 · 街坊特惠比街市平3成"}
+          </p>
+
+          {/* 晨早铁闸挂袋交付约定通知 */}
+          <div className="mt-4 bg-emerald-800/60 border border-emerald-600/50 rounded-xl p-3 text-xs leading-relaxed text-emerald-50">
+            <div className="flex items-center gap-1.5 font-bold text-yellow-300 mb-1">
+              <Clock className="w-3.5 h-3.5" />
+              <span>晨早防盜鐵閘掛袋便民約定 (07:15 - 08:00)</span>
+            </div>
+            <p className="text-[11px] opacity-90">
+              配送員清晨將 500g 保鮮蔬菜懸掛於閣下鐵閘把手，請於 08:30 前取入屋內。全港首創：次日免費同址補送新鮮蔬菜，守護街坊一日三餐！
+            </p>
+          </div>
+
+          {/* 推荐街坊得青菜 Banner */}
+          <div
+            onClick={() => setShareModalOpen(true)}
+            className="mt-3 bg-gradient-to-r from-amber-400 to-orange-400 text-slate-900 rounded-xl p-3 flex items-center justify-between shadow-sm cursor-pointer hover:shadow-md transition active:scale-[0.99]"
+          >
+            <div className="flex items-center gap-2.5">
+              <div className="p-2 bg-white/90 rounded-lg text-orange-600 shadow-sm">
+                <Gift className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="text-xs font-black flex items-center gap-1">
+                  <span>🎁 推薦街坊買菜，免費換新鮮青菜！</span>
+                </div>
+                <div className="text-[11px] text-slate-800 font-medium">
+                  每成功推薦 1 戶鄰居，送 100 買菜積分（可兌換 1 包新鮮菜心）
+                </div>
+              </div>
+            </div>
+            <ChevronRight className="w-5 h-5 text-slate-800" />
+          </div>
         </div>
-        <h1 className="text-2xl font-black text-slate-900 tracking-tight">
-          {BRANDING_CONFIG.brandName} · {BRANDING_CONFIG.brandSubtitle}
-        </h1>
-        <p className="text-xs text-slate-500 mt-1 max-w-xs mx-auto">
-          {BRANDING_CONFIG.slogan}
-        </p>
-      </div>
+      </header>
 
-      {/* 三大端口测试入口 */}
-      <div className="space-y-3.5">
-        {/* 端口 1: 街坊扫码端 */}
-        <Link
-          href="/join/HUA888"
-          className="block bg-white p-5 rounded-2xl border border-emerald-500/30 shadow-sm hover:shadow-md transition active:scale-[0.99] group"
-        >
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center space-x-2.5">
-              <div className="p-2.5 bg-emerald-50 text-emerald-600 rounded-xl group-hover:bg-emerald-600 group-hover:text-white transition">
-                <Smartphone className="w-5 h-5" />
-              </div>
-              <div>
-                <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                  C 端街坊入口
-                </span>
-                <h2 className="font-black text-slate-900 text-base mt-0.5">
-                  街坊掃碼登記頁面
-                </h2>
-              </div>
-            </div>
-            <ArrowRight className="w-5 h-5 text-slate-400 group-hover:text-emerald-600 group-hover:translate-x-1 transition" />
+      {/* 包邮门槛进度条 */}
+      <div className="max-w-md mx-auto px-4 -mt-3">
+        <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-200">
+          <div className="flex items-center justify-between text-xs font-bold mb-1.5">
+            <span className="text-slate-600 flex items-center gap-1">
+              <ShoppingBag className="w-3.5 h-3.5 text-emerald-600" />
+              <span>自選免運費進度條</span>
+            </span>
+            <span className={isFreeShipping ? "text-emerald-600" : "text-amber-600"}>
+              {isFreeShipping ? "🎉 已享清晨免費掛閘送樓！" : `再選 HK$ ${diffToFree} 即免運費`}
+            </span>
           </div>
-          <p className="text-xs text-slate-500 leading-relaxed">
-            模擬街坊掃描【蘇屋邨牡丹樓 · 華姐】的專屬海報，輸入 8 位香港電話、房號並一秒跳轉進 WhatsApp 訂菜群。
-          </p>
-        </Link>
 
-        {/* 端口 2: 楼长专属工作台 */}
-        <Link
-          href="/leader"
-          className="block bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition active:scale-[0.99] group"
-        >
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center space-x-2.5">
-              <div className="p-2.5 bg-slate-900 text-white rounded-xl">
-                <QrCode className="w-5 h-5" />
-              </div>
-              <div>
-                <span className="text-xs font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-full">
-                  B 端樓長入口
-                </span>
-                <h2 className="font-black text-slate-900 text-base mt-0.5">
-                  愛心樓長個人駕駛艙
-                </h2>
-              </div>
-            </div>
-            <ArrowRight className="w-5 h-5 text-slate-400 group-hover:text-slate-900 group-hover:translate-x-1 transition" />
+          <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
+            <div
+              className={`h-full transition-all duration-300 rounded-full ${
+                isFreeShipping ? "bg-emerald-500" : "bg-amber-400"
+              }`}
+              style={{
+                width: `${Math.min(100, (totalAmountHkd / freeThreshold) * 100)}%`,
+              }}
+            />
           </div>
-          <p className="text-xs text-slate-500 leading-relaxed">
-            樓長隨時查看自己的專屬推廣二維碼、已鎖定街坊人數、長者送菜標記，並可一鍵在 WhatsApp 與街坊聯繫。
-          </p>
-        </Link>
 
-        {/* 端口 3: 操盘总控后台 */}
-        <Link
-          href="/admin"
-          className="block bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition active:scale-[0.99] group"
-        >
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center space-x-2.5">
-              <div className="p-2.5 bg-blue-50 text-blue-600 rounded-xl">
-                <Layers className="w-5 h-5" />
-              </div>
-              <div>
-                <span className="text-xs font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full">
-                  M 總控運營端
-                </span>
-                <h2 className="font-black text-slate-900 text-base mt-0.5">
-                  操盤總控台 & 對賬導出
-                </h2>
-              </div>
-            </div>
-            <ArrowRight className="w-5 h-5 text-slate-400 group-hover:text-blue-600 group-hover:translate-x-1 transition" />
+          <div className="flex justify-between items-center text-[10px] text-slate-400 mt-1">
+            <span>當前選購：HK$ {totalAmountHkd.toFixed(1)}</span>
+            <span>包郵門檻：實付滿 HK$ {freeThreshold.toFixed(1)}</span>
           </div>
-          <p className="text-xs text-slate-500 leading-relaxed">
-            Nison 與阿蘊查看全港所有大廈樓長分佈、街坊總檔案，並支持【一鍵導出 Excel 對賬表】核對 WhatsApp 接龍。
-          </p>
-        </Link>
-      </div>
-
-      {/* 架构解耦说明 */}
-      <div className="mt-6 p-4 bg-emerald-50/70 rounded-2xl border border-emerald-200/80 text-xs text-emerald-950 space-y-1.5">
-        <div className="font-bold flex items-center gap-1.5 text-emerald-900">
-          <Settings className="w-4 h-4 text-emerald-700" />
-          <span>解耦與文案配置提示</span>
         </div>
-        <p className="text-[11px] text-emerald-800 leading-normal">
-          所有品牌名稱（如【供港優鮮】）、Slogan、角色稱謂（如【愛心樓長】）、Logo 與群組鏈接，均已集中抽取至配置文件：
-        </p>
-        <code className="block bg-white/80 p-2 rounded-lg font-mono text-[10px] text-emerald-900 border border-emerald-200">
-          src/config/branding.ts
-        </code>
-        <p className="text-[11px] text-emerald-800">
-          未來等你在另一個對話框設計好品牌素材後，直接修改該文件即可全站生效，零代碼改造成本！
-        </p>
       </div>
+
+      {/* 蔬菜商品自选列表 */}
+      <main className="max-w-md mx-auto px-4 mt-5 space-y-3">
+        <div className="flex items-center justify-between px-1">
+          <h2 className="text-sm font-black text-slate-900 tracking-tight flex items-center gap-1.5">
+            <span>今日蘇屋邨直供鮮菜</span>
+            <span className="text-[10px] font-semibold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full">
+              足500g/份
+            </span>
+          </h2>
+          <span className="text-xs text-slate-400">買 2-3 樣剛好一餐</span>
+        </div>
+
+        {loading ? (
+          <div className="text-center py-12 text-slate-400 text-xs">正在載入供港新鮮蔬菜...</div>
+        ) : (
+          <div className="grid grid-cols-1 gap-3">
+            {products.map((p) => {
+              const qty = cart[p.id] || 0;
+              return (
+                <div
+                  key={p.id}
+                  className="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-3.5 hover:border-emerald-300 transition"
+                >
+                  {/* 商品图片 */}
+                  <div className="relative w-20 h-20 rounded-xl overflow-hidden bg-slate-100 flex-shrink-0">
+                    <img
+                      src={p.imageUrl}
+                      alt={p.nameZh}
+                      className="w-full h-full object-cover"
+                    />
+                    {p.tag && (
+                      <span className="absolute top-1 left-1 bg-rose-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded shadow-sm">
+                        {p.tag}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* 商品信息 */}
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-bold text-slate-900 text-sm truncate">{p.nameZh}</h3>
+                    <p className="text-[11px] text-slate-400 truncate mt-0.5">{p.subTitle}</p>
+
+                    <div className="flex items-baseline gap-1.5 mt-2">
+                      <span className="text-rose-600 font-black text-base">
+                        HK$ {p.priceHkd.toFixed(1)}
+                      </span>
+                      <span className="text-slate-300 line-through text-xs">
+                        HK$ {p.marketPriceHkd.toFixed(1)}
+                      </span>
+                      <span className="text-[10px] text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded font-bold">
+                        {p.netWeight}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* 数量调节器 */}
+                  <div className="flex items-center gap-2">
+                    {qty > 0 && (
+                      <>
+                        <button
+                          onClick={() => updateCart(p.id, -1)}
+                          className="w-8 h-8 rounded-full border border-slate-200 bg-slate-50 flex items-center justify-center text-slate-600 active:scale-95 transition"
+                        >
+                          <Minus className="w-3.5 h-3.5" />
+                        </button>
+                        <span className="text-sm font-black w-4 text-center">{qty}</span>
+                      </>
+                    )}
+                    <button
+                      onClick={() => updateCart(p.id, 1)}
+                      className="w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center shadow-sm active:scale-95 hover:bg-emerald-700 transition"
+                    >
+                      <Plus className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </main>
+
+      {/* 底部悬浮购物车 */}
+      {totalItemsCount > 0 && (
+        <div className="fixed bottom-4 left-0 right-0 px-4 z-40 max-w-md mx-auto">
+          <div className="bg-slate-900 text-white rounded-2xl p-3.5 shadow-2xl flex items-center justify-between border border-slate-700">
+            <div>
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-xs text-slate-400">已選 {totalItemsCount} 樣 · 實付</span>
+                <span className="text-xl font-black text-yellow-400">
+                  HK$ {totalAmountHkd.toFixed(1)}
+                </span>
+              </div>
+              <div className="text-[10px] text-slate-300">
+                {isFreeShipping ? "✅ 已達標：清晨 07:15 免費掛鐵閘" : `還差 HK$ ${diffToFree} 包郵`}
+              </div>
+            </div>
+
+            <button
+              onClick={handleOpenCheckout}
+              className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black px-5 py-2.5 rounded-xl text-xs flex items-center gap-1.5 active:scale-95 transition shadow-lg"
+            >
+              <span>立即登記下單</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* 极简下订与登记弹窗 */}
+      {checkoutOpen && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in">
+          <div className="bg-white w-full max-w-md rounded-t-[2rem] sm:rounded-2xl p-6 max-h-[90vh] overflow-y-auto">
+            {!submittedOrder ? (
+              <form onSubmit={handleSubmitOrder}>
+                <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                  <h3 className="text-base font-black text-slate-900">
+                    登記蘇屋邨送菜地址
+                  </h3>
+                  <button
+                    type="button"
+                    onClick={() => setCheckoutOpen(false)}
+                    className="text-xs text-slate-400 hover:text-slate-600"
+                  >
+                    取消
+                  </button>
+                </div>
+
+                <div className="mt-4 space-y-3.5 text-xs">
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">
+                      8 位香港手機號碼
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-2.5 text-slate-400 font-bold">+852</span>
+                      <input
+                        type="tel"
+                        maxLength={8}
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))}
+                        placeholder="例如：91234567"
+                        className="w-full pl-14 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:border-emerald-500 focus:outline-none font-bold text-sm"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2.5">
+                    <div>
+                      <label className="block font-bold text-slate-700 mb-1">街坊稱呼</label>
+                      <input
+                        type="text"
+                        value={realName}
+                        onChange={(e) => setRealName(e.target.value)}
+                        placeholder="例如：陳太"
+                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:border-emerald-500 focus:outline-none font-bold"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-bold text-slate-700 mb-1">大廈座號</label>
+                      <select
+                        value={buildingName}
+                        onChange={(e) => setBuildingName(e.target.value)}
+                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:border-emerald-500 focus:outline-none font-bold"
+                      >
+                        <option value="牡丹樓">牡丹樓 (有樓長)</option>
+                        <option value="金菊樓">金菊樓 (直通車專送)</option>
+                        <option value="茶花樓">茶花樓</option>
+                        <option value="杜鵑樓">杜鵑樓</option>
+                        <option value="綠柳樓">綠柳樓</option>
+                        <option value="櫻桃樓">櫻桃樓</option>
+                        <option value="荷花樓">荷花樓</option>
+                        <option value="蘭花樓">蘭花樓</option>
+                        <option value="壽菊樓">壽菊樓</option>
+                        <option value="百合樓">百合樓</option>
+                        <option value="楓林樓">楓林樓</option>
+                        <option value="丁香樓">丁香樓</option>
+                        <option value="劍蘭樓">劍蘭樓</option>
+                        <option value="海棠樓">海棠樓</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">
+                      門牌房號 (掛閘位置)
+                    </label>
+                    <input
+                      type="text"
+                      value={flatNo}
+                      onChange={(e) => setFlatNo(e.target.value)}
+                      placeholder="例如：1204室 (鐵閘外把手)"
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:border-emerald-500 focus:outline-none font-bold"
+                      required
+                    />
+                  </div>
+
+                  {/* 订单明细清单 */}
+                  <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                    <div className="font-bold text-slate-600 mb-1.5 flex justify-between">
+                      <span>訂單摘要</span>
+                      <span className="text-emerald-700">共 {totalItemsCount} 樣 (足斤保鮮裝)</span>
+                    </div>
+                    <div className="space-y-1 text-slate-500">
+                      {products
+                        .filter((p) => (cart[p.id] || 0) > 0)
+                        .map((p) => (
+                          <div key={p.id} className="flex justify-between">
+                            <span>
+                              {p.nameZh} x{cart[p.id]}
+                            </span>
+                            <span>HK$ {(p.priceHkd * cart[p.id]).toFixed(1)}</span>
+                          </div>
+                        ))}
+                    </div>
+                    <div className="border-t border-slate-200 mt-2 pt-2 flex justify-between font-black text-slate-900 text-sm">
+                      <span>實付總額</span>
+                      <span className="text-rose-600">HK$ {totalAmountHkd.toFixed(1)}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="w-full mt-5 bg-emerald-600 hover:bg-emerald-700 text-white font-black py-3 rounded-xl text-sm shadow-md active:scale-95 transition flex items-center justify-center gap-1.5"
+                >
+                  {submitting ? "正在登記訂單..." : "確認下單 · 晨早掛鐵閘"}
+                </button>
+              </form>
+            ) : (
+              /* 提交成功页面：无支付直接拉起 WhatsApp/微信对账 */
+              <div className="text-center py-4 space-y-4">
+                <div className="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto">
+                  <CheckCircle2 className="w-7 h-7" />
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-black text-slate-900">
+                    登記成功！訂單已鎖定
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-1">
+                    訂單編號：<span className="font-bold text-slate-800">{submittedOrder.orderNo}</span>
+                  </p>
+                  <p className="text-xs text-emerald-700 font-bold mt-1">
+                    明日清晨 07:15 - 08:00 將掛於 {submittedOrder.buildingName} {submittedOrder.flatNo} 鐵閘
+                  </p>
+                </div>
+
+                {/* WhatsApp 一键发送对账 */}
+                <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-200 text-left space-y-2.5">
+                  <div className="text-xs font-bold text-emerald-950 flex items-center gap-1.5">
+                    <Send className="w-4 h-4 text-emerald-600" />
+                    <span>即時向送貨專員發送訂單對賬：</span>
+                  </div>
+                  <p className="text-[11px] text-emerald-800 leading-relaxed">
+                    請點擊下方綠色按鈕，將預填好的菜單發送至官方 WhatsApp 或微信，客服將發送轉數快(FPS)或安排現金交收。
+                  </p>
+
+                  <a
+                    href={`https://wa.me/85291234567?text=${buildWhatsAppOrderMessage()}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="block w-full bg-[#25D366] hover:bg-[#20ba59] text-white text-center font-black py-2.5 rounded-xl text-xs shadow transition"
+                  >
+                    💬 一鍵打開 WhatsApp 發送菜單對賬
+                  </a>
+                </div>
+
+                <button
+                  onClick={() => {
+                    setSubmittedOrder(null);
+                    setCheckoutOpen(false);
+                  }}
+                  className="w-full text-xs text-slate-400 hover:text-slate-600 py-1"
+                >
+                  返回首頁
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* 推荐街坊得青菜弹窗 */}
+      {shareModalOpen && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in">
+          <div className="bg-white w-full max-w-sm rounded-2xl p-5 space-y-4">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+              <h3 className="font-black text-slate-900 text-sm flex items-center gap-1.5">
+                <Gift className="w-4 h-4 text-orange-500" />
+                <span>推薦街坊 · 免費換青菜</span>
+              </h3>
+              <button
+                onClick={() => setShareModalOpen(false)}
+                className="text-xs text-slate-400 hover:text-slate-600"
+              >
+                關閉
+              </button>
+            </div>
+
+            <div className="bg-amber-50 rounded-xl p-3 text-xs leading-relaxed text-amber-900">
+              <p className="font-bold mb-1">🌱 街坊互助福利機制：</p>
+              <p className="text-[11px] text-amber-800">
+                每推薦 1 位鄰舍在蘇屋邨下單，您將獲得 100 買菜積分（滿 100 分即可隨單免費兌換 500g 寧夏菜心一包，零現金門檻，吃新鮮健康菜）！
+              </p>
+            </div>
+
+            <button
+              onClick={handleCopyReferral}
+              className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-1.5 shadow active:scale-95 transition"
+            >
+              {copiedLink ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+              <span>{copiedLink ? "已複製邀請文案與鏈接！" : "一鍵複製專屬推薦文案"}</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* 底部导航 */}
+      <footer className="max-w-md mx-auto px-4 mt-8 text-center text-xs text-slate-400 space-y-2">
+        <div className="flex justify-center items-center gap-4 text-slate-500 font-medium">
+          <Link href="/join/HUA888" className="hover:text-emerald-700">
+            街坊登記專頁
+          </Link>
+          <span>·</span>
+          <Link href="/leader" className="hover:text-emerald-700">
+            樓長專屬工作台
+          </Link>
+          <span>·</span>
+          <Link href="/admin" className="hover:text-emerald-700">
+            操盤總台
+          </Link>
+        </div>
+        <p className="text-[10px] text-slate-300">
+          © 2026 供港優鮮 · 香港九龍深水埗蘇屋邨示範試點
+        </p>
+      </footer>
     </div>
   );
 }

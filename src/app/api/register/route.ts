@@ -7,11 +7,6 @@ export async function POST(request: NextRequest) {
   try {
     const body: RegisterPayload = await request.json();
 
-    // 1. 基础校验
-    if (!body.inviteCode) {
-      return NextResponse.json({ error: "缺少樓長邀請碼" }, { status: 400 });
-    }
-
     if (!isValidHkPhone(body.hkPhone)) {
       return NextResponse.json(
         { error: "請輸入正確的 8 位香港電話號碼（4/5/6/7/8/9 開頭）" },
@@ -27,15 +22,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "請填寫您的房號（如：1204室）" }, { status: 400 });
     }
 
-    // 2. 验证码校验（当前为测试阶段支持 1234，或者任何4位数字；预留后续接入 Twilio/阿里云国际）
-    const cleanOtp = (body.otp || "").trim();
-    if (cleanOtp.length < 4) {
-      return NextResponse.json({ error: "請輸入 4 位驗證碼（測試環境輸入 1234 即可）" }, { status: 400 });
-    }
-
-    // 3. 执行持久化绑定与注册
+    // 执行注册与绑定
     const { customer, isNew } = db.registerCustomer(body);
-    const leader = db.getLeaderByInviteCode(body.inviteCode);
+    const leader = body.inviteCode ? db.getLeaderByInviteCode(body.inviteCode) : null;
+    const config = db.getConfig();
 
     return NextResponse.json({
       success: true,
@@ -47,9 +37,10 @@ export async function POST(request: NextRequest) {
         estateName: customer.estateName,
         buildingName: customer.buildingName,
         flatNo: customer.flatNo,
-        boundLeaderName: leader?.realName,
+        boundLeaderName: leader?.realName || "平台公共專員",
+        pointsBalance: customer.pointsBalance || 0,
       },
-      whatsAppGroupUrl: leader?.whatsAppGroupUrl,
+      whatsAppGroupUrl: leader?.whatsAppGroupUrl || config.defaultWhatsAppGroupUrl,
     });
   } catch (error: any) {
     console.error("Register error:", error);
