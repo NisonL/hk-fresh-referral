@@ -39,7 +39,8 @@ import {
 import { AppConfig, Product, Leader, Customer, Order } from "@/types";
 
 export default function AdminPage() {
-  const [activeTab, setActiveTab] = useState<"grid" | "products" | "export" | "rules" | "brand">("grid");
+  const [activeTab, setActiveTab] = useState<"grid" | "products" | "export" | "rules" | "cms">("grid");
+  const [cmsPageTab, setCmsPageTab] = useState<"home" | "leader" | "join" | "stall" | "service">("home");
   const [loading, setLoading] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -358,7 +359,7 @@ export default function AdminPage() {
     { id: "products", label: "商品貨架動態管理", icon: ShoppingBag, badge: `${products.length}款` },
     { id: "export", label: "清晨鐵閘配送單導出", icon: Download, badge: "雙模式" },
     { id: "rules", label: "計酬規則與打勾開關", icon: Coins, badge: "雙層打勾" },
-    { id: "brand", label: "品牌與交付約定配置", icon: Settings },
+    { id: "cms", label: "全站版面文案", icon: Edit2, badge: "按頁管理" },
   ];
 
   return (
@@ -790,6 +791,107 @@ export default function AdminPage() {
                 </table>
               </div>
             </div>
+
+            {/* 表 3：👥 股東/合夥人/地推分賬歸屬總表 (涇渭分明 · 避免糾紛) */}
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 md:p-6 space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-100">
+                <div>
+                  <h3 className="font-black text-base md:text-lg text-slate-900 flex items-center gap-2">
+                    <Users className="w-5 h-5 text-emerald-600" />
+                    <span>👥 股東/合夥人/地推分賬歸屬總表 (涇渭分明 · 賬目透明)</span>
+                  </h3>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    線下傳單出資歸公司合資池（按股東投資股比分紅）；個人網絡營銷歸個人專屬（100%收益）；基層服務歸愛心樓長
+                  </p>
+                </div>
+                <div className="text-[11px] bg-emerald-50 text-emerald-800 font-bold px-3 py-1 rounded-full border border-emerald-200 flex items-center gap-1.5">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>全渠道歸屬精確追溯中</span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                {leaders.map((promoter) => {
+                  const isCompany = promoter.roleType === "COMPANY";
+                  const isPartner = promoter.roleType === "PARTNER";
+                  const inviteUrl = `https://hk-fresh-referral.vercel.app/?ref=${promoter.inviteCode}`;
+                  const boundCustCount = customers.filter(
+                    (c) => c.boundInviteCode === promoter.inviteCode || c.boundPromoterCode === promoter.inviteCode
+                  ).length;
+
+                  return (
+                    <div
+                      key={promoter.id}
+                      className={`p-4 rounded-2xl border transition flex flex-col justify-between ${
+                        isCompany
+                          ? "bg-gradient-to-br from-blue-50/80 to-indigo-50/40 border-blue-200 shadow-sm"
+                          : isPartner
+                          ? "bg-gradient-to-br from-amber-50/80 to-orange-50/40 border-amber-200 shadow-sm"
+                          : "bg-slate-50 border-slate-200 shadow-sm"
+                      }`}
+                    >
+                      <div>
+                        <div className="flex items-center justify-between gap-2 mb-2">
+                          <span
+                            className={`text-[10px] font-black px-2 py-0.5 rounded-full ${
+                              isCompany
+                                ? "bg-blue-600 text-white"
+                                : isPartner
+                                ? "bg-amber-600 text-white"
+                                : "bg-emerald-600 text-white"
+                            }`}
+                          >
+                            {isCompany ? "🏢 公司公域合資池" : isPartner ? "👤 創始合夥人渠道" : "👵 愛心樓長"}
+                          </span>
+                          <span className="font-mono font-bold text-xs bg-white px-2 py-0.5 rounded border border-slate-200 text-slate-700">
+                            代碼: {promoter.inviteCode}
+                          </span>
+                        </div>
+
+                        <div className="font-black text-slate-900 text-sm">{promoter.realName}</div>
+                        <div className="text-[11px] text-slate-500 mt-1 font-medium leading-relaxed">
+                          {promoter.equityShare || (isCompany ? "公司地推池 (按股東出資股比分紅)" : "個人拓展專屬收益")}
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-2 my-3 pt-3 border-t border-slate-200/60 text-center">
+                          <div className="bg-white/80 p-2 rounded-xl border border-slate-100">
+                            <div className="text-[10px] text-slate-400">綁定街坊</div>
+                            <div className="font-black text-slate-900 text-xs sm:text-sm">
+                              {boundCustCount} 戶
+                            </div>
+                          </div>
+                          <div className="bg-white/80 p-2 rounded-xl border border-slate-100">
+                            <div className="text-[10px] text-slate-400">累計單量</div>
+                            <div className="font-black text-emerald-700 text-xs sm:text-sm">
+                              {promoter.totalOrdersCount || 0} 單
+                            </div>
+                          </div>
+                          <div className="bg-white/80 p-2 rounded-xl border border-slate-100">
+                            <div className="text-[10px] text-slate-400">累計收益</div>
+                            <div className="font-black text-rose-600 text-xs sm:text-sm">
+                              HK$ {(promoter.totalCommissionEarned || 0).toFixed(1)}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="pt-2 border-t border-slate-200/60">
+                        <button
+                          onClick={() => {
+                            navigator.clipboard.writeText(inviteUrl);
+                            handleCopyText(inviteUrl);
+                          }}
+                          className="w-full py-1.5 bg-white hover:bg-slate-100 text-slate-800 border border-slate-200 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-sm active:scale-95"
+                        >
+                          <Copy className="w-3.5 h-3.5 text-slate-500" />
+                          <span>複製專屬推薦鏈接 (?ref={promoter.inviteCode})</span>
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           </div>
         )}
 
@@ -964,6 +1066,38 @@ export default function AdminPage() {
                             </span>
                           </div>
                         </button>
+
+                        {/* 档口合伙人实地建议价 (AB 方案结合) */}
+                        <div className="pt-2 border-t border-slate-100 text-[11px] space-y-1">
+                          <div className="flex items-center justify-between">
+                            <span className="text-amber-800 font-bold flex items-center gap-1">
+                              <Store className="w-3 h-3 text-amber-600" />
+                              <span>檔口建議市價：</span>
+                            </span>
+                            <div className="flex items-center gap-1 font-bold text-amber-900">
+                              <span>HK$</span>
+                              <input
+                                type="number"
+                                step="0.1"
+                                value={p.stallSuggestedPriceHkd ?? ""}
+                                placeholder="未設"
+                                onChange={(e) =>
+                                  handleUpdateProductField(
+                                    p.id,
+                                    "stallSuggestedPriceHkd",
+                                    e.target.value ? parseFloat(e.target.value) : undefined
+                                  )
+                                }
+                                className="w-14 px-1 py-0.5 border border-amber-300 rounded font-black text-amber-900 text-[11px] text-right bg-amber-50"
+                              />
+                            </div>
+                          </div>
+                          {p.stallPriceNote && (
+                            <p className="text-[10px] text-slate-400 line-clamp-1 italic">
+                              {p.stallPriceNote}
+                            </p>
+                          )}
+                        </div>
                       </div>
                     </div>
 
@@ -1311,6 +1445,62 @@ export default function AdminPage() {
                     {configForm.showMarketPriceComparison ? "顯示街市劃線價" : "純特惠價無對比"}
                   </div>
                 </div>
+
+                {/* 规则 7: 未满包邮门槛加收运费 */}
+                <div className="p-4 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-between">
+                  <div>
+                    <div className="font-bold text-slate-900 text-sm">
+                      7. 未滿包郵門檻加收運費 (小額訂單運力費)
+                    </div>
+                    <div className="text-[11px] text-slate-400">
+                      當街坊選購未滿包郵門檻時，自動加收基礎送貨運力費
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5 font-bold">
+                    <span>HK$</span>
+                    <input
+                      type="number"
+                      step="0.5"
+                      value={configForm.underThresholdDeliveryFee ?? 5.0}
+                      onChange={(e) =>
+                        setConfigForm({
+                          ...configForm,
+                          underThresholdDeliveryFee: parseFloat(e.target.value) || 0,
+                        })
+                      }
+                      className="w-16 px-2 py-1.5 bg-white border border-slate-200 rounded-lg font-black text-rose-600 text-xs"
+                    />
+                    <span className="text-slate-400">/ 筆</span>
+                  </div>
+                </div>
+
+                {/* 规则 8: 硬性起送门槛控制开关 */}
+                <div className="p-4 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="checkbox"
+                      id="chk-min-order"
+                      checked={configForm.enforceMinOrderThreshold ?? false}
+                      onChange={(e) =>
+                        setConfigForm({ ...configForm, enforceMinOrderThreshold: e.target.checked })
+                      }
+                      className="w-5 h-5 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500 cursor-pointer"
+                    />
+                    <label htmlFor="chk-min-order" className="cursor-pointer">
+                      <div className="font-bold text-slate-900 text-sm">
+                        8. 硬性起送門檻控制 (禁止小額單)
+                      </div>
+                      <div className="text-[11px] text-slate-400">
+                        {configForm.enforceMinOrderThreshold
+                          ? "✅ 已打勾啟用：未滿包郵門檻不給下單，強制提示再選1份"
+                          : "❌ 未打勾停用：允許小額下單，但自動疊加運費"}
+                      </div>
+                    </label>
+                  </div>
+                  <div className="font-bold text-xs text-slate-600 bg-white px-3 py-1.5 rounded-lg border border-slate-200">
+                    {configForm.enforceMinOrderThreshold ? "強制起送限制" : "允許補運費下單"}
+                  </div>
+                </div>
               </div>
             </form>
 
@@ -1395,102 +1585,457 @@ export default function AdminPage() {
                 </table>
               </div>
             </div>
+
+            {/* 卡片 3：戰區獨立運費與配送工資調整矩陣 (全局設置為基准線 · 各區獨立覆蓋) */}
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 md:p-8 space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-100">
+                <div>
+                  <h3 className="font-black text-base md:text-lg text-slate-900 flex items-center gap-2">
+                    <Truck className="w-5 h-5 text-emerald-600" />
+                    <span>戰區獨立運費與配送工資調整矩陣 (全局設置為基准線 · 各區獨立覆蓋)</span>
+                  </h3>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    全局設置為基准線；中環發達區可調高外送運費與送貨員工資，各屋邨亦可單獨設定起送門檻
+                  </p>
+                </div>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-slate-50 text-slate-500 uppercase font-bold border-b border-slate-200">
+                    <tr>
+                      <th className="py-3 px-4">戰區/屋邨名稱</th>
+                      <th className="py-3 px-4">所屬區域</th>
+                      <th className="py-3 px-4">獨立免運門檻</th>
+                      <th className="py-3 px-4">未滿門檻小額運費</th>
+                      <th className="py-3 px-4">送貨員每單運力津貼</th>
+                      <th className="py-3 px-4 text-right">戰區運行狀態</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    <tr className="hover:bg-slate-50">
+                      <td className="py-3.5 px-4 font-black text-slate-900 text-sm">深水埗蘇屋邨</td>
+                      <td className="py-3.5 px-4 text-slate-600 font-bold">深水埗區 (首發示範邨)</td>
+                      <td className="py-3.5 px-4 font-mono font-bold text-emerald-700">HK$ 18.9 (遵循全局)</td>
+                      <td className="py-3.5 px-4 font-mono font-bold text-rose-600">HK$ 5.0 / 單</td>
+                      <td className="py-3.5 px-4 font-mono font-bold text-slate-800">HK$ 2.0 / 單</td>
+                      <td className="py-3.5 px-4 text-right">
+                        <span className="text-[10px] font-bold bg-emerald-100 text-emerald-800 px-2.5 py-0.5 rounded-full">
+                          正在運營中
+                        </span>
+                      </td>
+                    </tr>
+                    <tr className="hover:bg-slate-50">
+                      <td className="py-3.5 px-4 font-black text-slate-900 text-sm">中環及半山區</td>
+                      <td className="py-3.5 px-4 text-slate-600 font-bold">中西區 (高端商業/住宅戰區)</td>
+                      <td className="py-3.5 px-4 font-mono font-bold text-emerald-700">HK$ 35.0 (獨立上浮)</td>
+                      <td className="py-3.5 px-4 font-mono font-bold text-rose-600">HK$ 10.0 / 單</td>
+                      <td className="py-3.5 px-4 font-mono font-bold text-slate-800">HK$ 4.0 / 單 (工資上調)</td>
+                      <td className="py-3.5 px-4 text-right">
+                        <span className="text-[10px] font-bold bg-blue-100 text-blue-800 px-2.5 py-0.5 rounded-full">
+                          戰區儲備中
+                        </span>
+                      </td>
+                    </tr>
+                    <tr className="hover:bg-slate-50">
+                      <td className="py-3.5 px-4 font-black text-slate-900 text-sm">屯門友愛邨</td>
+                      <td className="py-3.5 px-4 text-slate-600 font-bold">屯門區 (新界西示範)</td>
+                      <td className="py-3.5 px-4 font-mono font-bold text-emerald-700">HK$ 20.0</td>
+                      <td className="py-3.5 px-4 font-mono font-bold text-rose-600">HK$ 6.0 / 單</td>
+                      <td className="py-3.5 px-4 font-mono font-bold text-slate-800">HK$ 2.5 / 單</td>
+                      <td className="py-3.5 px-4 text-right">
+                        <span className="text-[10px] font-bold bg-slate-100 text-slate-600 px-2.5 py-0.5 rounded-full">
+                          規劃拓點中
+                        </span>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
         )}
 
-        {/* ===================== 模块 5: 品牌与交付约定配置 ===================== */}
-        {activeTab === "brand" && (
-          <form
-            onSubmit={handleSaveConfig}
-            className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 md:p-8 space-y-6"
-          >
-            <div>
-              <h3 className="font-black text-base md:text-lg text-slate-900 flex items-center gap-2">
-                <Settings className="w-5 h-5 text-emerald-600" />
-                <span>品牌、溯源與交付約定配置 (PC 寬屏配置)</span>
-              </h3>
-              <p className="text-xs text-slate-400 mt-0.5">
-                前端即時解耦生效，支持靈活更換品牌名稱、Slogan與官方聯絡方式
-              </p>
-            </div>
-
-            <div className="space-y-4 text-xs">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">品牌主名稱</label>
-                  <input
-                    type="text"
-                    value={configForm.brandName || ""}
-                    onChange={(e) => setConfigForm({ ...configForm, brandName: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold"
-                  />
-                </div>
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">品牌副標題</label>
-                  <input
-                    type="text"
-                    value={configForm.brandSubtitle || ""}
-                    onChange={(e) => setConfigForm({ ...configForm, brandSubtitle: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold"
-                  />
-                </div>
-              </div>
-
+        {/* ===================== 模块 5: 全站版面文案 (Page-by-Page CMS) ===================== */}
+        {activeTab === "cms" && (
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 md:p-8 space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-100 gap-4">
               <div>
-                <label className="block font-bold text-slate-700 mb-1">宣傳 Slogan</label>
-                <input
-                  type="text"
-                  value={configForm.slogan || ""}
-                  onChange={(e) => setConfigForm({ ...configForm, slogan: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold"
-                />
+                <h3 className="font-black text-base md:text-lg text-slate-900 flex items-center gap-2">
+                  <Edit2 className="w-5 h-5 text-emerald-600" />
+                  <span>全站版面文案可視化管理 (按頁分組 · 隨心修改 · 實時生效)</span>
+                </h3>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  首頁、樓長端、招募頁、檔口定價與私域客服文案全解耦，無需改動代碼，隨改隨生效
+                </p>
               </div>
 
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">
-                  《街坊鐵閘掛袋交付須知》公告文案
-                </label>
-                <textarea
-                  rows={3}
-                  value={configForm.deliveryNotice || ""}
-                  onChange={(e) => setConfigForm({ ...configForm, deliveryNotice: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold text-xs leading-relaxed"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">官方客服 WhatsApp</label>
-                  <input
-                    type="text"
-                    value={configForm.supportWhatsApp || ""}
-                    onChange={(e) => setConfigForm({ ...configForm, supportWhatsApp: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold"
-                  />
-                </div>
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">官方客服微信號</label>
-                  <input
-                    type="text"
-                    value={configForm.defaultWechatId || ""}
-                    onChange={(e) => setConfigForm({ ...configForm, defaultWechatId: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold"
-                  />
-                </div>
+              {/* 页面直达预览快捷按钮 */}
+              <div className="flex items-center gap-2">
+                <Link
+                  href={
+                    cmsPageTab === "home"
+                      ? "/"
+                      : cmsPageTab === "leader"
+                      ? "/leader"
+                      : cmsPageTab === "join"
+                      ? "/join/HUA888"
+                      : "/"
+                  }
+                  target="_blank"
+                  className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-3 py-2 rounded-xl text-xs flex items-center gap-1.5 transition"
+                >
+                  <ExternalLink className="w-3.5 h-3.5 text-slate-500" />
+                  <span>實時新窗口預覽此頁</span>
+                </Link>
               </div>
             </div>
 
-            <div className="pt-4 border-t border-slate-100 flex justify-end">
+            {/* 页面分組切換選項卡 */}
+            <div className="flex space-x-2 border-b border-slate-200 pb-3 overflow-x-auto">
               <button
-                type="submit"
-                disabled={savingConfig}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-6 py-2.5 rounded-xl text-xs flex items-center gap-2 shadow-md active:scale-95 transition"
+                type="button"
+                onClick={() => setCmsPageTab("home")}
+                className={`px-4 py-2 rounded-xl text-xs font-black whitespace-nowrap transition ${
+                  cmsPageTab === "home"
+                    ? "bg-emerald-600 text-white shadow-sm"
+                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                }`}
               >
-                <Save className="w-4 h-4" />
-                <span>{savingConfig ? "保存中..." : "保存文案配置"}</span>
+                🛒 1. 街坊訂菜首頁 (/)
+              </button>
+              <button
+                type="button"
+                onClick={() => setCmsPageTab("leader")}
+                className={`px-4 py-2 rounded-xl text-xs font-black whitespace-nowrap transition ${
+                  cmsPageTab === "leader"
+                    ? "bg-emerald-600 text-white shadow-sm"
+                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                }`}
+              >
+                📱 2. 樓長移動駕駛艙 (/leader)
+              </button>
+              <button
+                type="button"
+                onClick={() => setCmsPageTab("join")}
+                className={`px-4 py-2 rounded-xl text-xs font-black whitespace-nowrap transition ${
+                  cmsPageTab === "join"
+                    ? "bg-emerald-600 text-white shadow-sm"
+                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                }`}
+              >
+                🤝 3. 愛心樓長招募專頁 (/join/HUA888)
+              </button>
+              <button
+                type="button"
+                onClick={() => setCmsPageTab("stall")}
+                className={`px-4 py-2 rounded-xl text-xs font-black whitespace-nowrap transition ${
+                  cmsPageTab === "stall"
+                    ? "bg-emerald-600 text-white shadow-sm"
+                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                }`}
+              >
+                🏪 4. 合作檔口與探店建議
+              </button>
+              <button
+                type="button"
+                onClick={() => setCmsPageTab("service")}
+                className={`px-4 py-2 rounded-xl text-xs font-black whitespace-nowrap transition ${
+                  cmsPageTab === "service"
+                    ? "bg-emerald-600 text-white shadow-sm"
+                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                }`}
+              >
+                💬 5. 私域客服與社群對賬
               </button>
             </div>
-          </form>
+
+            <form onSubmit={handleSaveConfig} className="space-y-6">
+              {/* 分页 1: 街坊订菜首页 */}
+              {cmsPageTab === "home" && (
+                <div className="space-y-4 text-xs">
+                  <div className="bg-emerald-50/60 p-4 rounded-xl border border-emerald-100 text-emerald-950 font-bold flex items-center justify-between">
+                    <span>當前正在編輯：🛒【街坊自選訂菜商城首頁 (/)】文案與公告</span>
+                    <Link href="/" target="_blank" className="text-emerald-700 underline flex items-center gap-1">
+                      <span>點擊預覽效果</span>
+                      <ExternalLink className="w-3 h-3" />
+                    </Link>
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">
+                      1. 頂部產地溯源背書標語 (頂部綠色小橫幅)
+                    </label>
+                    <input
+                      type="text"
+                      value={configForm.originBadge || ""}
+                      onChange={(e) => setConfigForm({ ...configForm, originBadge: e.target.value })}
+                      placeholder="例如：廣東東莞石碣潤豐基地直發 · 文錦渡檢驗檢疫放行"
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block font-bold text-slate-700 mb-1">2. 品牌主名稱</label>
+                      <input
+                        type="text"
+                        value={configForm.brandName || ""}
+                        onChange={(e) => setConfigForm({ ...configForm, brandName: e.target.value })}
+                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-bold text-slate-700 mb-1">3. 品牌副標題標籤</label>
+                      <input
+                        type="text"
+                        value={configForm.brandSubtitle || ""}
+                        onChange={(e) => setConfigForm({ ...configForm, brandSubtitle: e.target.value })}
+                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">4. 宣傳標語口號 (Slogan)</label>
+                    <input
+                      type="text"
+                      value={configForm.slogan || ""}
+                      onChange={(e) => setConfigForm({ ...configForm, slogan: e.target.value })}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block font-bold text-slate-700 mb-1">
+                        5. 清晨專人掛鐵閘時段 (全站動態生效)
+                      </label>
+                      <input
+                        type="text"
+                        value={configForm.deliveryTimeWindow || ""}
+                        onChange={(e) => setConfigForm({ ...configForm, deliveryTimeWindow: e.target.value })}
+                        placeholder="例如：07:15 - 08:00"
+                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-bold text-slate-700 mb-1">
+                        6. 滿額包郵起送門檻 (HK$)
+                      </label>
+                      <input
+                        type="number"
+                        step="0.1"
+                        value={configForm.freeShippingThreshold ?? 18.9}
+                        onChange={(e) =>
+                          setConfigForm({
+                            ...configForm,
+                            freeShippingThreshold: parseFloat(e.target.value) || 0,
+                          })
+                        }
+                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">
+                      7. 《街坊鐵閘掛袋交付約定》須知全文 (首頁頂部提示卡)
+                    </label>
+                    <textarea
+                      rows={3}
+                      value={configForm.deliveryNotice || ""}
+                      onChange={(e) => setConfigForm({ ...configForm, deliveryNotice: e.target.value })}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold text-xs leading-relaxed"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* 分页 2: 楼长移动驾驶舱 */}
+              {cmsPageTab === "leader" && (
+                <div className="space-y-4 text-xs">
+                  <div className="bg-blue-50/60 p-4 rounded-xl border border-blue-100 text-blue-950 font-bold flex items-center justify-between">
+                    <span>當前正在編輯：📱【樓長移動駕駛艙 (/leader)】展示文案</span>
+                    <Link href="/leader" target="_blank" className="text-blue-700 underline flex items-center gap-1">
+                      <span>點擊預覽駕駛艙</span>
+                      <ExternalLink className="w-3 h-3" />
+                    </Link>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block font-bold text-slate-700 mb-1">樓長基礎服務津貼 (HK$/單)</label>
+                      <input
+                        type="number"
+                        step="0.5"
+                        value={configForm.leaderCommissionRate ?? 2.0}
+                        onChange={(e) =>
+                          setConfigForm({
+                            ...configForm,
+                            leaderCommissionRate: parseFloat(e.target.value) || 0,
+                          })
+                        }
+                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-bold text-slate-700 mb-1">導師帶教裂變津貼 (HK$/單)</label>
+                      <input
+                        type="number"
+                        step="0.1"
+                        value={configForm.mentorAllowanceRate ?? 0.5}
+                        onChange={(e) =>
+                          setConfigForm({
+                            ...configForm,
+                            mentorAllowanceRate: parseFloat(e.target.value) || 0,
+                          })
+                        }
+                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-slate-600 space-y-1">
+                    <div className="font-bold text-slate-800">📌 樓長專屬宣傳文案模板預設：</div>
+                    <p className="text-[11px] leading-relaxed">
+                      「【蘇屋街坊福利】東莞潤豐基地直供！新鮮蔬菜足500g一斤裝比街市平3成，清晨 07:15-08:00 專人掛防盜鐵閘把手。用我呢個鏈接首次買菜，你有一包特惠菜，我都有一包免費青菜！」
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* 分页 3: 爱心楼长招募专页 */}
+              {cmsPageTab === "join" && (
+                <div className="space-y-4 text-xs">
+                  <div className="bg-amber-50/60 p-4 rounded-xl border border-amber-100 text-amber-950 font-bold flex items-center justify-between">
+                    <span>當前正在編輯：🤝【愛心樓長招募專頁 (/join/[code])】招募說辭</span>
+                    <Link href="/join/HUA888" target="_blank" className="text-amber-700 underline flex items-center gap-1">
+                      <span>點擊預覽招募頁</span>
+                      <ExternalLink className="w-3 h-3" />
+                    </Link>
+                  </div>
+
+                  <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-3">
+                    <div className="font-black text-slate-900 text-sm">招募三大核心承諾條款：</div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      <div className="bg-white p-3 rounded-lg border border-slate-200">
+                        <div className="font-bold text-slate-800">① 零資金投入</div>
+                        <div className="text-[11px] text-slate-500 mt-0.5">0押金、0進貨、0囤貨，街坊在線下單直接由平台直送</div>
+                      </div>
+                      <div className="bg-white p-3 rounded-lg border border-slate-200">
+                        <div className="font-bold text-slate-800">② 順手賺津貼</div>
+                        <div className="text-[11px] text-slate-500 mt-0.5">每單享 HK$ 2.0 現金服務津貼，順手月賺 HK$ 2,000~4,000 零用錢</div>
+                      </div>
+                      <div className="bg-white p-3 rounded-lg border border-slate-200">
+                        <div className="font-bold text-slate-800">③ 終身鎖客分潤</div>
+                        <div className="text-[11px] text-slate-500 mt-0.5">本樓街坊只要掃您的二維碼買過一次菜，終身綁定為您的組員</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* 分页 4: 合作档口与探店建议 */}
+              {cmsPageTab === "stall" && (
+                <div className="space-y-4 text-xs">
+                  <div className="bg-emerald-50/60 p-4 rounded-xl border border-emerald-100 text-emerald-950 font-bold">
+                    <span>當前正在編輯：🏪【前置合作檔口提貨與合夥人定價建議 (AB方案結合)】</span>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block font-bold text-slate-700 mb-1">合作前置街市名稱</label>
+                      <input
+                        type="text"
+                        value={configForm.partnerMarketName || ""}
+                        onChange={(e) => setConfigForm({ ...configForm, partnerMarketName: e.target.value })}
+                        placeholder="例如：深水埗保安道街市"
+                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-bold text-slate-700 mb-1">合作檔口名稱/番號</label>
+                      <input
+                        type="text"
+                        value={configForm.partnerStallName || ""}
+                        onChange={(e) => setConfigForm({ ...configForm, partnerStallName: e.target.value })}
+                        placeholder="例如：128號 新記優鮮"
+                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="p-4 bg-amber-50/60 rounded-xl border border-amber-200 text-amber-900 leading-relaxed space-y-1.5">
+                    <div className="font-bold">💡 AB方案結合落地說明：</div>
+                    <p className="text-[11px]">
+                      檔口合夥人每天逛街市擁有第一手實時物價消息，可以在商品貨架後台提出「探店建議價」；平台總部可一鍵採納或在允許波動區間內生效，既具備一線靈活性，又保障全盤價格體系不失控。
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* 分页 5: 私域客服与社群对账 */}
+              {cmsPageTab === "service" && (
+                <div className="space-y-4 text-xs">
+                  <div className="bg-emerald-50/60 p-4 rounded-xl border border-emerald-100 text-emerald-950 font-bold">
+                    <span>當前正在編輯：💬【官方私域客服號與對賬通訊配置】</span>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block font-bold text-slate-700 mb-1">官方客服 WhatsApp 號碼 (不帶+號)</label>
+                      <input
+                        type="text"
+                        value={configForm.supportWhatsApp || ""}
+                        onChange={(e) => setConfigForm({ ...configForm, supportWhatsApp: e.target.value })}
+                        placeholder="例如：85291234567"
+                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold font-mono"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-bold text-slate-700 mb-1">官方客服微信號 (供對賬複製使用)</label>
+                      <input
+                        type="text"
+                        value={configForm.defaultWechatId || ""}
+                        onChange={(e) => setConfigForm({ ...configForm, defaultWechatId: e.target.value })}
+                        placeholder="例如：hk_fresh_official"
+                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold font-mono"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">蘇屋邨官方 WhatsApp 訂菜群鏈接</label>
+                    <input
+                      type="text"
+                      value={configForm.defaultWhatsAppGroupUrl || ""}
+                      onChange={(e) =>
+                        setConfigForm({ ...configForm, defaultWhatsAppGroupUrl: e.target.value })
+                      }
+                      placeholder="https://chat.whatsapp.com/demo-so-uk-official"
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold font-mono text-xs"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* 统一保存按钮 */}
+              <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
+                <span className="text-xs text-slate-400">
+                  修改後點擊右側按鈕，所編輯頁面立即全響應刷新
+                </span>
+                <button
+                  type="submit"
+                  disabled={savingConfig}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-6 py-2.5 rounded-xl text-xs flex items-center gap-2 shadow-md active:scale-95 transition cursor-pointer"
+                >
+                  <Save className="w-4 h-4" />
+                  <span>{savingConfig ? "保存中..." : "保存全站版面文案"}</span>
+                </button>
+              </div>
+            </form>
+          </div>
         )}
       </main>
 

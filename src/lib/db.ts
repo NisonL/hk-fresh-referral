@@ -27,11 +27,17 @@ const INITIAL_CONFIG: AppConfig = {
   brandName: "供港優鮮",
   brandSubtitle: "屋邨直通車",
   slogan: "東莞潤豐源頭直供 · 晨採午達 · 街坊特惠比街市平3成",
+  originBadge: "廣東東莞石碣潤豐基地直發 · 文錦渡檢驗檢疫放行",
+  deliveryTimeWindow: "07:15 - 08:00",
   deliveryNotice: "📢【蘇屋街坊】每日清晨 07:15 - 08:00 晨早防盜鐵閘掛袋便民配送，請於上午 08:30 前取入屋內。次日免費補送新鮮蔬菜，守護街坊一日三餐！",
   defaultWhatsAppGroupUrl: "https://chat.whatsapp.com/demo-so-uk-official",
   defaultWechatId: "hk_fresh_official",
   supportWhatsApp: "85291234567",
+  partnerMarketName: "深水埗保安道街市",
+  partnerStallName: "128號 新記優鮮",
   freeShippingThreshold: 18.9,
+  underThresholdDeliveryFee: 5.0,
+  enforceMinOrderThreshold: false,
 
   // 全局计算方式开关（打勾启用，不打勾则不计算）
   enableLeaderCommission: true,
@@ -172,31 +178,152 @@ const SO_UK_BUILDINGS: Building[] = [
   { id: "bldg-begonia", estateId: "estate-so-uk", nameZh: "海棠樓", blockCode: "BEGONIA", assignedLeaderId: null },
 ];
 
+const INITIAL_LEADERS: Leader[] = [
+  {
+    id: "promoter-company-souk",
+    inviteCode: "SOUK_LEAFLET",
+    realName: "公司蘇屋地推公共池",
+    roleType: "COMPANY",
+    equityShare: "公司股東合資池 (Nison / 阿運 / 牙仔 按出資股比分紅)",
+    hkPhone: "90000001",
+    estateId: "estate-so-uk",
+    estateName: "深水埗蘇屋邨",
+    buildingId: "bldg-peony",
+    buildingName: "蘇屋全邨公共地推",
+    whatsAppGroupUrl: "https://chat.whatsapp.com/demo-so-uk-official",
+    status: "ACTIVE",
+    totalCommissionEarned: 128.0,
+    totalOrdersCount: 64,
+    createdAt: "2026-10-01T08:00:00Z",
+  },
+  {
+    id: "promoter-nison",
+    inviteCode: "NISON",
+    realName: "李欣 (Nison) 專屬網銷拓展",
+    roleType: "PARTNER",
+    equityShare: "李欣個人自媒體/網絡營銷專屬 (提成 100% 歸李欣)",
+    hkPhone: "90000002",
+    estateId: "estate-so-uk",
+    estateName: "深水埗蘇屋邨",
+    buildingId: "bldg-peony",
+    buildingName: "全網自媒體矩陣",
+    whatsAppGroupUrl: "https://chat.whatsapp.com/demo-so-uk-official",
+    status: "ACTIVE",
+    totalCommissionEarned: 96.0,
+    totalOrdersCount: 48,
+    createdAt: "2026-10-05T08:00:00Z",
+  },
+  {
+    id: "promoter-yun",
+    inviteCode: "YUN",
+    realName: "阿運 運作拓展賬號",
+    roleType: "PARTNER",
+    equityShare: "阿運個人渠道 (提成 100% 歸阿運)",
+    hkPhone: "90000003",
+    estateId: "estate-so-uk",
+    estateName: "深水埗蘇屋邨",
+    buildingId: "bldg-peony",
+    buildingName: "線下運作拓展",
+    whatsAppGroupUrl: "https://chat.whatsapp.com/demo-so-uk-official",
+    status: "ACTIVE",
+    totalCommissionEarned: 52.0,
+    totalOrdersCount: 26,
+    createdAt: "2026-10-08T08:00:00Z",
+  },
+  {
+    id: "promoter-ngai",
+    inviteCode: "NGAI",
+    realName: "牙仔 拓展推廣賬號",
+    roleType: "PARTNER",
+    equityShare: "牙仔個人推廣 (提成 100% 歸牙仔)",
+    hkPhone: "90000004",
+    estateId: "estate-so-uk",
+    estateName: "深水埗蘇屋邨",
+    buildingId: "bldg-peony",
+    buildingName: "街坊走訪拓展",
+    whatsAppGroupUrl: "https://chat.whatsapp.com/demo-so-uk-official",
+    status: "ACTIVE",
+    totalCommissionEarned: 38.0,
+    totalOrdersCount: 19,
+    createdAt: "2026-10-10T08:00:00Z",
+  },
+  {
+    id: "leader-hua",
+    inviteCode: "HUA888",
+    realName: "華姐 (愛心樓長)",
+    roleType: "BUILDING_LEADER",
+    equityShare: "牡丹樓基層常駐服務津貼 HK$ 2.0/單",
+    hkPhone: "91234567",
+    wechatId: "hua_jie_so_uk",
+    estateId: "estate-so-uk",
+    estateName: "深水埗蘇屋邨",
+    buildingId: "bldg-peony",
+    buildingName: "牡丹樓",
+    whatsAppGroupUrl: "https://chat.whatsapp.com/demo-so-uk-peony",
+    parentLeaderId: null,
+    status: "ACTIVE",
+    isSelfDelivery: false,
+    totalCommissionEarned: 24.0,
+    totalOrdersCount: 12,
+    createdAt: "2026-10-25T10:00:00Z",
+  },
+  {
+    id: "leader-chan",
+    inviteCode: "CHAN888",
+    realName: "陳伯 (愛心樓長)",
+    roleType: "BUILDING_LEADER",
+    equityShare: "金菊樓基層常駐服務津貼 HK$ 2.0/單 (自行掛閘)",
+    hkPhone: "92345678",
+    wechatId: "chan_bak_so_uk",
+    estateId: "estate-so-uk",
+    estateName: "深水埗蘇屋邨",
+    buildingId: "bldg-jinju",
+    buildingName: "金菊樓",
+    whatsAppGroupUrl: "https://chat.whatsapp.com/demo-so-uk-jinju",
+    parentLeaderId: "leader-hua",
+    status: "ACTIVE",
+    isSelfDelivery: true, // 单人个性化打勾：自行配送挂闸
+    totalCommissionEarned: 16.0,
+    totalOrdersCount: 4,
+    createdAt: "2026-10-28T10:00:00Z",
+  },
+];
+
+const INITIAL_ESTATES: Estate[] = [
+  {
+    id: "estate-so-uk",
+    code: "SO_UK",
+    nameZh: "深水埗蘇屋邨",
+    district: "深水埗區",
+    freeShippingThresholdOverride: 18.9,
+    deliveryFeeOverride: 5.0,
+    runnerDeliveryFeeOverride: 2.0,
+  },
+  {
+    id: "estate-central",
+    code: "CENTRAL",
+    nameZh: "中環及半山區",
+    district: "中西區 (高端示範戰區)",
+    freeShippingThresholdOverride: 35.0,
+    deliveryFeeOverride: 10.0,
+    runnerDeliveryFeeOverride: 4.0,
+  },
+  {
+    id: "estate-yau-oi",
+    code: "YAU_OI",
+    nameZh: "屯門友愛邨",
+    district: "屯門區 (新界西示範)",
+    freeShippingThresholdOverride: 20.0,
+    deliveryFeeOverride: 6.0,
+    runnerDeliveryFeeOverride: 2.5,
+  },
+];
+
 const INITIAL_DATA: DbSchema = {
   config: INITIAL_CONFIG,
-  estates: [
-    { id: "estate-so-uk", code: "SO_UK", nameZh: "深水埗蘇屋邨", district: "深水埗區" },
-    { id: "estate-yau-oi", code: "YAU_OI", nameZh: "屯門友愛邨", district: "屯門區" },
-  ],
+  estates: INITIAL_ESTATES,
   buildings: SO_UK_BUILDINGS,
-  leaders: [
-    {
-      id: "leader-hua",
-      inviteCode: "HUA888",
-      realName: "華姐",
-      hkPhone: "91234567",
-      wechatId: "hua_jie_so_uk",
-      estateId: "estate-so-uk",
-      estateName: "深水埗蘇屋邨",
-      buildingId: "bldg-peony",
-      buildingName: "牡丹樓",
-      whatsAppGroupUrl: "https://chat.whatsapp.com/demo-so-uk-peony",
-      parentLeaderId: null,
-      status: "ACTIVE",
-      totalCommissionEarned: 16.0,
-      createdAt: "2026-10-25T10:00:00Z",
-    },
-  ],
+  leaders: INITIAL_LEADERS,
   customers: [
     {
       id: "cust-1",
@@ -347,6 +474,30 @@ function ensureDb(): DbSchema {
     // 平滑升级字段
     if (!data.config) data.config = INITIAL_CONFIG;
     if (data.config.showMarketPriceComparison === undefined) data.config.showMarketPriceComparison = true;
+    if (!data.config.originBadge) data.config.originBadge = INITIAL_CONFIG.originBadge;
+    if (!data.config.deliveryTimeWindow) data.config.deliveryTimeWindow = INITIAL_CONFIG.deliveryTimeWindow;
+    if (!data.config.partnerMarketName) data.config.partnerMarketName = INITIAL_CONFIG.partnerMarketName;
+    if (!data.config.partnerStallName) data.config.partnerStallName = INITIAL_CONFIG.partnerStallName;
+    if (data.config.underThresholdDeliveryFee === undefined) data.config.underThresholdDeliveryFee = 5.0;
+    if (data.config.enforceMinOrderThreshold === undefined) data.config.enforceMinOrderThreshold = false;
+    
+    // 平滑升级战区设置
+    if (!data.estates || data.estates.length < 3) {
+      data.estates = INITIAL_ESTATES;
+    }
+
+    // 平滑升级合伙人/地推/楼长账户
+    if (!data.leaders || data.leaders.length < 5) {
+      const existingCodes = new Set((data.leaders || []).map((l: any) => l.inviteCode));
+      const mergedLeaders = [...(data.leaders || [])];
+      for (const initL of INITIAL_LEADERS) {
+        if (!existingCodes.has(initL.inviteCode)) {
+          mergedLeaders.push(initL);
+        }
+      }
+      data.leaders = mergedLeaders;
+    }
+
     if (!data.products || data.products.length === 0) {
       data.products = INITIAL_PRODUCTS;
     } else {
@@ -354,6 +505,8 @@ function ensureDb(): DbSchema {
         ...p,
         isActive: p.isActive !== undefined ? p.isActive : true,
         showMarketPrice: p.showMarketPrice !== undefined ? p.showMarketPrice : true,
+        stallSuggestedPriceHkd: p.stallSuggestedPriceHkd || (p.marketPriceHkd ? +(p.marketPriceHkd * 0.9).toFixed(1) : undefined),
+        stallPriceNote: p.stallPriceNote || "新記檔口掌櫃探店：對標鄰近街市均價，建議薄利多銷做大單量",
       }));
     }
     if (!data.orders) data.orders = [];
@@ -586,8 +739,13 @@ export const db = {
       ? store.leaders.find((l) => l.id === building.assignedLeaderId)
       : null;
 
+    // 识别拓展渠道人 (SOUK_LEAFLET 公司池, NISON 李欣个人网销, YUN 阿运运作, NGAI 牙仔, HUA888 华姐等)
+    let matchedPromoter = payload.inviteCode
+      ? store.leaders.find((l) => l.inviteCode.toUpperCase() === payload.inviteCode?.toUpperCase())
+      : null;
+
     if (!cust) {
-      // 首次下单自动登记入册
+      // 首次下单自动登记入册并终身绑定拓展渠道
       cust = {
         id: `cust-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
         hkPhone: cleanPhone,
@@ -599,6 +757,7 @@ export const db = {
         flatNo: payload.flatNo.trim(),
         boundLeaderId: assignedLeader ? assignedLeader.id : "SYSTEM_RUNNER",
         boundInviteCode: assignedLeader ? assignedLeader.inviteCode : "PUBLIC",
+        boundPromoterCode: matchedPromoter ? matchedPromoter.inviteCode : "SOUK_LEAFLET",
         referrerPhone: cleanRefPhone && cleanRefPhone !== cleanPhone ? cleanRefPhone : null,
         pointsBalance: 0,
         ordersCount: 0,
@@ -611,13 +770,44 @@ export const db = {
       if (!cust.referrerPhone && cleanRefPhone && cleanRefPhone !== cleanPhone) {
         cust.referrerPhone = cleanRefPhone;
       }
+      if (!cust.boundPromoterCode) {
+        cust.boundPromoterCode = matchedPromoter ? matchedPromoter.inviteCode : "SOUK_LEAFLET";
+      }
     }
+
+    // 确定本单归属的推广渠道码
+    const orderPromoterCode = matchedPromoter?.inviteCode || cust.boundPromoterCode || "SOUK_LEAFLET";
+    const activePromoter = store.leaders.find((l) => l.inviteCode === orderPromoterCode);
+    if (activePromoter) {
+      activePromoter.totalOrdersCount = (activePromoter.totalOrdersCount || 0) + 1;
+      // 若为合伙人或公司池，累计平台业务贡献
+      if (activePromoter.roleType === "COMPANY" || activePromoter.roleType === "PARTNER") {
+        activePromoter.totalCommissionEarned = (activePromoter.totalCommissionEarned || 0) + (config.leaderCommissionRate || 2.0);
+      }
+    }
+
+    // 战区独立门槛与运费核算
+    const currentEstate = store.estates.find((e) => e.nameZh === payload.estateName) || store.estates[0];
+    const targetThreshold = currentEstate?.freeShippingThresholdOverride ?? config.freeShippingThreshold;
+    const targetUnderFee = currentEstate?.deliveryFeeOverride ?? config.underThresholdDeliveryFee ?? 5.0;
+
+    const itemsSubtotal = payload.items.reduce((sum, item) => sum + item.priceHkd * item.qty, 0);
+
+    // 硬性起送门槛控制
+    if (config.enforceMinOrderThreshold && itemsSubtotal < targetThreshold) {
+      throw new Error(`未滿最低起送門檻 (HK$ ${targetThreshold.toFixed(1)})，請再選購新鮮蔬菜`);
+    }
+
+    const deliveryFeeHkd = itemsSubtotal >= targetThreshold ? 0 : targetUnderFee;
+    const computedTotalHkd = +(itemsSubtotal + deliveryFeeHkd).toFixed(2);
 
     let directLeaderId = cust ? cust.boundLeaderId : null;
     let mentorLeaderId: string | null = null;
     let directLeaderCommission = 0;
     let mentorAllowance = 0;
-    let runnerDeliveryFee = config.enableRunnerDelivery ? config.runnerDeliveryFee : 0;
+    let runnerDeliveryFee = config.enableRunnerDelivery
+      ? (currentEstate?.runnerDeliveryFeeOverride ?? config.runnerDeliveryFee)
+      : 0;
     let referrerBonusPoints = 0;
 
     // 1. 直属楼长分润计算 (受全局打勾开关与单人自送打勾控制)
@@ -677,7 +867,7 @@ export const db = {
 
     // 更新买家消费统计
     cust.ordersCount = (cust.ordersCount || 0) + 1;
-    cust.totalSpent = +((cust.totalSpent || 0) + payload.totalAmountHkd).toFixed(2);
+    cust.totalSpent = +((cust.totalSpent || 0) + computedTotalHkd).toFixed(2);
 
     const orderNo = `#SU-${Math.floor(1000 + Math.random() * 9000)}`;
     const newOrder: Order = {
@@ -689,13 +879,16 @@ export const db = {
       buildingName: payload.buildingName,
       flatNo: payload.flatNo,
       items: payload.items,
-      totalAmountHkd: payload.totalAmountHkd,
+      itemsAmountHkd: itemsSubtotal,
+      deliveryFeeHkd,
+      totalAmountHkd: computedTotalHkd,
       status: "PENDING_CONFIRMATION",
       directLeaderId,
       directLeaderCommission,
       mentorLeaderId,
       mentorAllowance,
-      runnerDeliveryFee: config.runnerDeliveryFee,
+      runnerDeliveryFee,
+      promoterCode: orderPromoterCode,
       referrerPhone: cust.referrerPhone || cleanRefPhone || null,
       referrerBonusPoints,
       createdAt: new Date().toISOString(),

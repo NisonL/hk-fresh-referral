@@ -4,13 +4,28 @@
       "id": "estate-so-uk",
       "code": "SO_UK",
       "nameZh": "深水埗蘇屋邨",
-      "district": "深水埗區"
+      "district": "深水埗區",
+      "freeShippingThresholdOverride": 18.9,
+      "deliveryFeeOverride": 5,
+      "runnerDeliveryFeeOverride": 2
+    },
+    {
+      "id": "estate-central",
+      "code": "CENTRAL",
+      "nameZh": "中環及半山區",
+      "district": "中西區 (高端示範戰區)",
+      "freeShippingThresholdOverride": 35,
+      "deliveryFeeOverride": 10,
+      "runnerDeliveryFeeOverride": 4
     },
     {
       "id": "estate-yau-oi",
       "code": "YAU_OI",
       "nameZh": "屯門友愛邨",
-      "district": "屯門區"
+      "district": "屯門區 (新界西示範)",
+      "freeShippingThresholdOverride": 20,
+      "deliveryFeeOverride": 6,
+      "runnerDeliveryFeeOverride": 2.5
     }
   ],
   "buildings": [
@@ -139,9 +154,115 @@
       "whatsAppGroupUrl": "https://chat.whatsapp.com/invite-yauoi-oitak-demo",
       "status": "ACTIVE",
       "createdAt": "2026-10-26T14:30:00Z"
+    },
+    {
+      "id": "promoter-company-souk",
+      "inviteCode": "SOUK_LEAFLET",
+      "realName": "公司蘇屋地推公共池",
+      "roleType": "COMPANY",
+      "equityShare": "公司股東合資池 (Nison / 阿運 / 牙仔 按出資股比分紅)",
+      "hkPhone": "90000001",
+      "estateId": "estate-so-uk",
+      "estateName": "深水埗蘇屋邨",
+      "buildingId": "bldg-peony",
+      "buildingName": "蘇屋全邨公共地推",
+      "whatsAppGroupUrl": "https://chat.whatsapp.com/demo-so-uk-official",
+      "status": "ACTIVE",
+      "totalCommissionEarned": 128,
+      "totalOrdersCount": 64,
+      "createdAt": "2026-10-01T08:00:00Z"
+    },
+    {
+      "id": "promoter-nison",
+      "inviteCode": "NISON",
+      "realName": "李欣 (Nison) 專屬網銷拓展",
+      "roleType": "PARTNER",
+      "equityShare": "李欣個人自媒體/網絡營銷專屬 (提成 100% 歸李欣)",
+      "hkPhone": "90000002",
+      "estateId": "estate-so-uk",
+      "estateName": "深水埗蘇屋邨",
+      "buildingId": "bldg-peony",
+      "buildingName": "全網自媒體矩陣",
+      "whatsAppGroupUrl": "https://chat.whatsapp.com/demo-so-uk-official",
+      "status": "ACTIVE",
+      "totalCommissionEarned": 98,
+      "totalOrdersCount": 49,
+      "createdAt": "2026-10-05T08:00:00Z"
+    },
+    {
+      "id": "promoter-yun",
+      "inviteCode": "YUN",
+      "realName": "阿運 運作拓展賬號",
+      "roleType": "PARTNER",
+      "equityShare": "阿運個人渠道 (提成 100% 歸阿運)",
+      "hkPhone": "90000003",
+      "estateId": "estate-so-uk",
+      "estateName": "深水埗蘇屋邨",
+      "buildingId": "bldg-peony",
+      "buildingName": "線下運作拓展",
+      "whatsAppGroupUrl": "https://chat.whatsapp.com/demo-so-uk-official",
+      "status": "ACTIVE",
+      "totalCommissionEarned": 52,
+      "totalOrdersCount": 26,
+      "createdAt": "2026-10-08T08:00:00Z"
+    },
+    {
+      "id": "promoter-ngai",
+      "inviteCode": "NGAI",
+      "realName": "牙仔 拓展推廣賬號",
+      "roleType": "PARTNER",
+      "equityShare": "牙仔個人推廣 (提成 100% 歸牙仔)",
+      "hkPhone": "90000004",
+      "estateId": "estate-so-uk",
+      "estateName": "深水埗蘇屋邨",
+      "buildingId": "bldg-peony",
+      "buildingName": "街坊走訪拓展",
+      "whatsAppGroupUrl": "https://chat.whatsapp.com/demo-so-uk-official",
+      "status": "ACTIVE",
+      "totalCommissionEarned": 38,
+      "totalOrdersCount": 19,
+      "createdAt": "2026-10-10T08:00:00Z"
+    },
+    {
+      "id": "leader-chan",
+      "inviteCode": "CHAN888",
+      "realName": "陳伯 (愛心樓長)",
+      "roleType": "BUILDING_LEADER",
+      "equityShare": "金菊樓基層常駐服務津貼 HK$ 2.0/單 (自行掛閘)",
+      "hkPhone": "92345678",
+      "wechatId": "chan_bak_so_uk",
+      "estateId": "estate-so-uk",
+      "estateName": "深水埗蘇屋邨",
+      "buildingId": "bldg-jinju",
+      "buildingName": "金菊樓",
+      "whatsAppGroupUrl": "https://chat.whatsapp.com/demo-so-uk-jinju",
+      "parentLeaderId": "leader-hua",
+      "status": "ACTIVE",
+      "isSelfDelivery": true,
+      "totalCommissionEarned": 16,
+      "totalOrdersCount": 4,
+      "createdAt": "2026-10-28T10:00:00Z"
     }
   ],
   "customers": [
+    {
+      "id": "cust-1794388257578-132",
+      "hkPhone": "98765432",
+      "realName": "??",
+      "estateId": "estate-so-uk",
+      "estateName": "??????",
+      "buildingId": "bldg-peony",
+      "buildingName": "???",
+      "flatNo": "1801?",
+      "boundLeaderId": "SYSTEM_RUNNER",
+      "boundInviteCode": "PUBLIC",
+      "boundPromoterCode": "NISON",
+      "referrerPhone": null,
+      "pointsBalance": 0,
+      "ordersCount": 1,
+      "totalSpent": 13.5,
+      "boundAt": "2026-11-11T09:10:57.578Z"
+    },
     {
       "id": "cust-1794232509024-877",
       "hkPhone": "92223344",
@@ -230,7 +351,13 @@
     "leaderCommissionRate": 2,
     "mentorAllowanceRate": 0.5,
     "referralPointsPerOrder": 100,
-    "showMarketPriceComparison": true
+    "showMarketPriceComparison": true,
+    "originBadge": "廣東東莞石碣潤豐基地直發 · 文錦渡檢驗檢疫放行",
+    "deliveryTimeWindow": "07:15 - 08:00",
+    "partnerMarketName": "深水埗保安道街市",
+    "partnerStallName": "128號 新記優鮮",
+    "underThresholdDeliveryFee": 5,
+    "enforceMinOrderThreshold": false
   },
   "products": [
     {
@@ -244,7 +371,9 @@
       "tag": "必搶爆款",
       "inStock": true,
       "isActive": true,
-      "showMarketPrice": true
+      "showMarketPrice": true,
+      "stallSuggestedPriceHkd": 12.6,
+      "stallPriceNote": "新記檔口掌櫃探店：對標鄰近街市均價，建議薄利多銷做大單量"
     },
     {
       "id": "prod-2",
@@ -257,7 +386,9 @@
       "tag": "街坊最愛",
       "inStock": true,
       "isActive": true,
-      "showMarketPrice": true
+      "showMarketPrice": true,
+      "stallSuggestedPriceHkd": 9.9,
+      "stallPriceNote": "新記檔口掌櫃探店：對標鄰近街市均價，建議薄利多銷做大單量"
     },
     {
       "id": "prod-3",
@@ -270,7 +401,9 @@
       "tag": "清甜嫩口",
       "inStock": true,
       "isActive": true,
-      "showMarketPrice": true
+      "showMarketPrice": true,
+      "stallSuggestedPriceHkd": 10.8,
+      "stallPriceNote": "新記檔口掌櫃探店：對標鄰近街市均價，建議薄利多銷做大單量"
     },
     {
       "id": "prod-4",
@@ -283,7 +416,9 @@
       "tag": "消暑必選",
       "inStock": true,
       "isActive": true,
-      "showMarketPrice": true
+      "showMarketPrice": true,
+      "stallSuggestedPriceHkd": 9,
+      "stallPriceNote": "新記檔口掌櫃探店：對標鄰近街市均價，建議薄利多銷做大單量"
     },
     {
       "id": "prod-5",
@@ -296,7 +431,9 @@
       "tag": "特惠日常",
       "inStock": true,
       "isActive": true,
-      "showMarketPrice": true
+      "showMarketPrice": true,
+      "stallSuggestedPriceHkd": 9,
+      "stallPriceNote": "新記檔口掌櫃探店：對標鄰近街市均價，建議薄利多銷做大單量"
     },
     {
       "id": "prod-6",
@@ -309,7 +446,9 @@
       "tag": "沙瓤濃香",
       "inStock": true,
       "isActive": true,
-      "showMarketPrice": true
+      "showMarketPrice": true,
+      "stallSuggestedPriceHkd": 10.8,
+      "stallPriceNote": "新記檔口掌櫃探店：對標鄰近街市均價，建議薄利多銷做大單量"
     },
     {
       "id": "prod-7",
@@ -322,7 +461,9 @@
       "tag": "清甜滾湯",
       "inStock": true,
       "isActive": true,
-      "showMarketPrice": true
+      "showMarketPrice": true,
+      "stallSuggestedPriceHkd": 11.7,
+      "stallPriceNote": "新記檔口掌櫃探店：對標鄰近街市均價，建議薄利多銷做大單量"
     },
     {
       "id": "prod-8",
@@ -335,10 +476,43 @@
       "tag": "健康輕食",
       "inStock": true,
       "isActive": true,
-      "showMarketPrice": true
+      "showMarketPrice": true,
+      "stallSuggestedPriceHkd": 12.6,
+      "stallPriceNote": "新記檔口掌櫃探店：對標鄰近街市均價，建議薄利多銷做大單量"
     }
   ],
   "orders": [
+    {
+      "id": "ord-1794388257578",
+      "orderNo": "#SU-3390",
+      "customerPhone": "98765432",
+      "customerName": "??",
+      "estateName": "??????",
+      "buildingName": "???",
+      "flatNo": "1801?",
+      "items": [
+        {
+          "nameZh": "????�?????",
+          "productId": "prod-1",
+          "priceHkd": 8.5,
+          "qty": 1,
+          "netWeight": "500g"
+        }
+      ],
+      "itemsAmountHkd": 8.5,
+      "deliveryFeeHkd": 5,
+      "totalAmountHkd": 13.5,
+      "status": "PENDING_CONFIRMATION",
+      "directLeaderId": "SYSTEM_RUNNER",
+      "directLeaderCommission": 0,
+      "mentorLeaderId": null,
+      "mentorAllowance": 0,
+      "runnerDeliveryFee": 0,
+      "promoterCode": "NISON",
+      "referrerPhone": null,
+      "referrerBonusPoints": 0,
+      "createdAt": "2026-11-11T09:10:57.578Z"
+    },
     {
       "id": "ord-1794232509025",
       "orderNo": "#SU-7123",

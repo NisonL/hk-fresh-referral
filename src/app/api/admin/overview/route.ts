@@ -17,6 +17,8 @@ export async function GET() {
     0
   );
 
+  const estates = db.getEstates();
+
   return NextResponse.json({
     stats: {
       totalLeaders: leaders.length,
@@ -33,5 +35,6 @@ export async function GET() {
     customers,
     products,
     orders,
+    estates,
   });
 }
