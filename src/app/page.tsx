@@ -28,6 +28,11 @@ import {
   AlertTriangle,
   ExternalLink,
   Info,
+  MapPin,
+  Edit2,
+  LogIn,
+  LogOut,
+  RefreshCw,
 } from "lucide-react";
 import { Product, AppConfig } from "@/types";
 
@@ -79,6 +84,25 @@ export default function OrderPage() {
   // 品类切换：时令蔬菜 (在售) / 产地鲜果 (Coming soon 预告)
   const [activeCategory, setActiveCategory] = useState<"VEG" | "FRUIT">("VEG");
 
+  // 街坊会员身份记忆与登录状态 (本地持久化免密模式)
+  const [currentCustomer, setCurrentCustomer] = useState<{
+    phone: string;
+    realName: string;
+    buildingName: string;
+    flatNo: string;
+    pointsBalance?: number;
+    ordersCount?: number;
+  } | null>(null);
+
+  // 地址修改与折叠控制
+  const [editingAddress, setEditingAddress] = useState(false);
+  const [autoRecognizedMsg, setAutoRecognizedMsg] = useState("");
+
+  // 快捷登录/切换手机号弹窗
+  const [loginModalOpen, setLoginModalOpen] = useState(false);
+  const [loginPhoneInput, setLoginPhoneInput] = useState("");
+  const [loginLoading, setLoginLoading] = useState(false);
+
   // 微信客服对账弹窗
   const [wechatModalOpen, setWechatModalOpen] = useState(false);
   const [copiedWechatOrder, setCopiedWechatOrder] = useState(false);
@@ -122,8 +146,54 @@ export default function OrderPage() {
 
       const savedLarge = localStorage.getItem("hk_fresh_large_font");
       if (savedLarge === "true") setIsLargeFont(true);
+
+      // 从 localStorage 恢复已记住的街坊会员资料
+      const savedProfileRaw = localStorage.getItem("hk_fresh_customer_profile");
+      if (savedProfileRaw) {
+        try {
+          const profile = JSON.parse(savedProfileRaw);
+          if (profile && profile.phone) {
+            setPhone(profile.phone);
+            setRealName(profile.realName || "");
+            setBuildingName(profile.buildingName || "牡丹樓");
+            setFlatNo(profile.flatNo || "");
+            setCurrentCustomer(profile);
+            // 静默同步云端最新积分与订单单量
+            refreshCustomerProfile(profile.phone);
+          }
+        } catch (e) {
+          console.error("Failed to parse saved profile", e);
+        }
+      }
     }
   }, []);
+
+  const refreshCustomerProfile = async (targetPhone: string) => {
+    try {
+      const res = await fetch(`/api/customer/points?phone=${targetPhone}`);
+      const data = await res.json();
+      if (res.ok && data.customer) {
+        const updated = {
+          phone: targetPhone,
+          realName: data.customer.realName,
+          buildingName: data.customer.buildingName,
+          flatNo: data.customer.flatNo,
+          pointsBalance: data.customer.pointsBalance,
+          ordersCount: data.customer.ordersCount,
+        };
+        setCurrentCustomer(updated);
+        setPhone(updated.phone);
+        setRealName(updated.realName);
+        setBuildingName(updated.buildingName);
+        setFlatNo(updated.flatNo);
+        if (typeof window !== "undefined") {
+          localStorage.setItem("hk_fresh_customer_profile", JSON.stringify(updated));
+        }
+      }
+    } catch (err) {
+      console.error("Failed to refresh customer profile", err);
+    }
+  };
 
   const toggleLargeFont = () => {
     const next = !isLargeFont;
@@ -192,7 +262,119 @@ export default function OrderPage() {
       alert(`未滿最低起送門檻 (HK$ ${freeThreshold.toFixed(1)})，請再選購 1 份蔬菜即可下單！`);
       return;
     }
+    // 如果已经记住了完整地址，默认折叠直接展现快速确认卡片
+    if (currentCustomer && currentCustomer.flatNo) {
+      setEditingAddress(false);
+    } else {
+      setEditingAddress(true);
+    }
     setCheckoutOpen(true);
+  };
+
+  // 手机号输入变更处理：输入满 8 位时自动联网匹配老客户资料
+  const handlePhoneInputChange = async (val: string) => {
+    const cleaned = val.replace(/\D/g, "");
+    setPhone(cleaned);
+    setAutoRecognizedMsg("");
+
+    if (cleaned.length === 8) {
+      try {
+        const res = await fetch(`/api/customer/points?phone=${cleaned}`);
+        const data = await res.json();
+        if (res.ok && data.customer) {
+          setRealName(data.customer.realName);
+          setBuildingName(data.customer.buildingName);
+          setFlatNo(data.customer.flatNo);
+          const foundProfile = {
+            phone: cleaned,
+            realName: data.customer.realName,
+            buildingName: data.customer.buildingName,
+            flatNo: data.customer.flatNo,
+            pointsBalance: data.customer.pointsBalance,
+            ordersCount: data.customer.ordersCount,
+          };
+          setCurrentCustomer(foundProfile);
+          if (typeof window !== "undefined") {
+            localStorage.setItem("hk_fresh_customer_profile", JSON.stringify(foundProfile));
+          }
+          setAutoRecognizedMsg(`🎉 識別到已登記街坊：${data.customer.realName}！已為您自動載入 ${data.customer.buildingName} ${data.customer.flatNo}`);
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+  };
+
+  // 退出当前登录/清除记住的资料
+  const handleLogoutCustomer = () => {
+    if (confirm("確認切換或退出當前街坊會員？退出後可重新輸入手機號下單。")) {
+      setCurrentCustomer(null);
+      setPhone("");
+      setRealName("");
+      setFlatNo("");
+      setEditingAddress(true);
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("hk_fresh_customer_profile");
+      }
+    }
+  };
+
+  // 快捷登录/切换手机号
+  const handleQuickLogin = async (phoneToLogin: string) => {
+    const clean = phoneToLogin.trim().replace(/\D/g, "");
+    if (clean.length !== 8) {
+      alert("請輸入有效的 8 位香港手機號碼");
+      return;
+    }
+    setLoginLoading(true);
+    try {
+      const res = await fetch(`/api/customer/points?phone=${clean}`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "查詢失敗");
+
+      if (data.customer) {
+        const profile = {
+          phone: clean,
+          realName: data.customer.realName,
+          buildingName: data.customer.buildingName,
+          flatNo: data.customer.flatNo,
+          pointsBalance: data.customer.pointsBalance,
+          ordersCount: data.customer.ordersCount,
+        };
+        setCurrentCustomer(profile);
+        setPhone(profile.phone);
+        setRealName(profile.realName);
+        setBuildingName(profile.buildingName);
+        setFlatNo(profile.flatNo);
+        if (typeof window !== "undefined") {
+          localStorage.setItem("hk_fresh_customer_profile", JSON.stringify(profile));
+        }
+        alert(`✅ 登入成功！歡迎回來，${profile.realName}！已自動載入您的送菜地址與買菜積分。`);
+      } else {
+        const newProf = {
+          phone: clean,
+          realName: "新街坊",
+          buildingName: "牡丹樓",
+          flatNo: "",
+          pointsBalance: 0,
+          ordersCount: 0,
+        };
+        setCurrentCustomer(newProf);
+        setPhone(clean);
+        setRealName("");
+        setFlatNo("");
+        setEditingAddress(true);
+        if (typeof window !== "undefined") {
+          localStorage.setItem("hk_fresh_customer_profile", JSON.stringify(newProf));
+        }
+        alert(`歡迎新街坊！號碼 +852 ${clean} 已就緒，首次下單填寫房號即可終身自動記住！`);
+      }
+      setLoginModalOpen(false);
+    } catch (err: any) {
+      alert(err.message || "登入失敗，請稍後再試");
+    } finally {
+      setLoginLoading(false);
+    }
   };
 
   const handleSubmitOrder = async (e: React.FormEvent) => {
@@ -238,8 +420,23 @@ export default function OrderPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "下單失敗");
 
+      // 下单成功后，系统在客户端自动建立终身免密记忆档案，下次完全免填！
+      const newProfile = {
+        phone,
+        realName,
+        buildingName,
+        flatNo,
+        pointsBalance: (currentCustomer?.pointsBalance || 0) + (data.order?.referrerBonusPoints ? 100 : 0),
+        ordersCount: (currentCustomer?.ordersCount || 0) + 1,
+      };
+      setCurrentCustomer(newProfile);
+      if (typeof window !== "undefined") {
+        localStorage.setItem("hk_fresh_customer_profile", JSON.stringify(newProfile));
+      }
+
       setSubmittedOrder(data.order);
       setCart({});
+      setEditingAddress(false);
     } catch (err: any) {
       alert(err.message || "系統繁忙，請稍後再試");
     } finally {
@@ -275,6 +472,9 @@ export default function OrderPage() {
       if (!res.ok) throw new Error(data.error || "兌換失敗");
       setRedeemSuccessMsg(data.message);
       queryPointsWallet(walletPhone);
+      if (currentCustomer && currentCustomer.phone === walletPhone) {
+        refreshCustomerProfile(walletPhone);
+      }
     } catch (err: any) {
       alert(err.message);
     }
@@ -339,7 +539,7 @@ export default function OrderPage() {
   };
 
   const handleCopyReferral = () => {
-    const myRef = phone || walletPhone || "NISON";
+    const myRef = phone || currentCustomer?.phone || walletPhone || "NISON";
     const inviteUrl = typeof window !== "undefined" ? `${window.location.origin}/?ref=${myRef}` : "";
     const text = `【蘇屋街坊福利】東莞潤豐基地直供！新鮮蔬菜足500g一斤裝比街市平3成，清晨 ${config?.deliveryTimeWindow || "07:15-08:00"} 專人掛防盜鐵閘把手。用我呢個鏈接首次買菜，你有一包特惠菜，我都有一包免費青菜：\n${inviteUrl}`;
     navigator.clipboard.writeText(text);
@@ -426,8 +626,9 @@ export default function OrderPage() {
 
               <button
                 onClick={() => {
-                  setWalletPhone(phone || "92345678");
-                  queryPointsWallet(phone || "92345678");
+                  const targetP = currentCustomer?.phone || phone || "91112233";
+                  setWalletPhone(targetP);
+                  queryPointsWallet(targetP);
                   setWalletModalOpen(true);
                 }}
                 className="bg-emerald-800/90 border border-emerald-500 text-white px-3.5 py-2 rounded-xl text-xs font-bold shadow-sm flex items-center gap-1.5 hover:bg-emerald-800 transition active:scale-95"
@@ -438,9 +639,70 @@ export default function OrderPage() {
             </div>
           </div>
 
+          {/* ===================== 街坊会员登录状态条 (醒目直观 · 永久免密记忆) ===================== */}
+          <div className="mt-3.5 bg-emerald-950/80 border border-emerald-400/40 rounded-2xl p-3 text-xs text-white shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+            {currentCustomer ? (
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center font-black text-slate-950 text-xs shadow-sm flex-shrink-0">
+                  <UserCheck className="w-4 h-4 text-emerald-950" />
+                </div>
+                <div>
+                  <div className="font-black text-sm text-yellow-300 flex items-center gap-2">
+                    <span>{currentCustomer.realName} (+852 {currentCustomer.phone})</span>
+                    <span className="text-[10px] bg-yellow-400/20 text-yellow-200 border border-yellow-400/40 px-2 py-0.5 rounded-full font-bold">
+                      已記住街坊檔案
+                    </span>
+                  </div>
+                  <div className="text-[11px] text-emerald-100 flex items-center gap-2 mt-0.5">
+                    <span>🏠 {currentCustomer.buildingName} {currentCustomer.flatNo || "門牌號未設"}</span>
+                    <span>·</span>
+                    <span className="text-amber-300 font-bold">🪙 買菜積分: {currentCustomer.pointsBalance ?? 0} 分</span>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-slate-800 flex items-center justify-center text-slate-300 flex-shrink-0">
+                  <UserCheck className="w-4 h-4" />
+                </div>
+                <div>
+                  <div className="font-bold text-slate-100 text-xs">
+                    您當前為【免登入極簡模式】
+                  </div>
+                  <div className="text-[11px] text-emerald-200/90">
+                    首次下單即自動建立終身檔案並永久記住；曾下單的老街坊可點右側直接登入載入地址
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="flex items-center gap-2 self-end sm:self-center">
+              {currentCustomer ? (
+                <button
+                  onClick={handleLogoutCustomer}
+                  className="bg-emerald-800/80 hover:bg-emerald-800 text-emerald-100 border border-emerald-600/60 px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1 active:scale-95 cursor-pointer"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                  <span>切換手機 / 退出</span>
+                </button>
+              ) : (
+                <button
+                  onClick={() => {
+                    setLoginPhoneInput(phone || "");
+                    setLoginModalOpen(true);
+                  }}
+                  className="bg-gradient-to-r from-amber-400 to-orange-400 hover:from-amber-300 hover:to-orange-300 text-slate-950 px-3.5 py-1.5 rounded-xl text-xs font-black shadow-sm transition flex items-center gap-1 active:scale-95 cursor-pointer"
+                >
+                  <LogIn className="w-3.5 h-3.5 text-slate-900" />
+                  <span>老街坊登入 / 載入地址</span>
+                </button>
+              )}
+            </div>
+          </div>
+
           {/* 邻里转介绍专属提示 */}
           {referrerPhone && (
-            <div className="mt-3.5 bg-emerald-900/90 border border-yellow-400/60 rounded-xl p-3 text-xs text-yellow-200 flex items-center gap-2.5 shadow-sm animate-in fade-in">
+            <div className="mt-3 bg-emerald-900/90 border border-yellow-400/60 rounded-xl p-3 text-xs text-yellow-200 flex items-center gap-2.5 shadow-sm animate-in fade-in">
               <UserCheck className="w-4 h-4 text-yellow-400 flex-shrink-0" />
               <span>
                 鄰舍福利：您正通過專屬推薦渠道 <b>[{referrerPhone}]</b> 選購！本次下單雙方皆可積累買菜積分免費換蔬菜！
@@ -711,7 +973,7 @@ export default function OrderPage() {
                           setFruitNotifyModalOpen(true);
                           setFruitNotified(false);
                         }}
-                        className="mt-3.5 w-full py-2 bg-gradient-to-r from-amber-400 to-orange-400 text-slate-950 rounded-xl text-xs font-black shadow-sm flex items-center justify-center gap-1.5 hover:shadow active:scale-95 transition"
+                        className="mt-3.5 w-full py-2 bg-gradient-to-r from-amber-400 to-orange-400 text-slate-950 rounded-xl text-xs font-black shadow-sm flex items-center justify-center gap-1.5 hover:shadow active:scale-95 transition cursor-pointer"
                       >
                         <span>🔔 預約首發到貨提醒</span>
                       </button>
@@ -802,7 +1064,7 @@ export default function OrderPage() {
 
                             <button
                               onClick={() => removeFromCart(p.id)}
-                              className="text-slate-400 hover:text-rose-600 p-1 transition"
+                              className="text-slate-400 hover:text-rose-600 p-1 transition cursor-pointer"
                               title="刪除此項"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
@@ -847,6 +1109,8 @@ export default function OrderPage() {
                   <span>
                     {isMinOrderBlocked
                       ? `未滿起送門檻 (差 HK$ ${diffToFree})`
+                      : currentCustomer?.flatNo
+                      ? `以【${currentCustomer.realName}】身份一鍵下單`
                       : "立即登記下單 · 晨早掛鐵閘"}
                   </span>
                   <ArrowRight className="w-4 h-4" />
@@ -863,13 +1127,14 @@ export default function OrderPage() {
                 </div>
                 <button
                   onClick={() => {
-                    setWalletPhone(phone || "92345678");
-                    queryPointsWallet(phone || "92345678");
+                    const targetP = currentCustomer?.phone || phone || "91112233";
+                    setWalletPhone(targetP);
+                    queryPointsWallet(targetP);
                     setWalletModalOpen(true);
                   }}
-                  className="text-[11px] text-emerald-700 font-bold hover:underline"
+                  className="text-[11px] text-emerald-700 font-bold hover:underline cursor-pointer"
                 >
-                  輸入電話查詢 →
+                  查詢 / 兌換 →
                 </button>
               </div>
               <p className="text-[11px] text-emerald-800 leading-relaxed">
@@ -909,7 +1174,7 @@ export default function OrderPage() {
                   : "bg-emerald-500 hover:bg-emerald-400 text-slate-950 cursor-pointer"
               }`}
             >
-              <span>{isMinOrderBlocked ? "再選1份" : "立即登記下單"}</span>
+              <span>{isMinOrderBlocked ? "再選1份" : currentCustomer?.flatNo ? "一鍵確認下單" : "立即登記下單"}</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>
@@ -923,90 +1188,166 @@ export default function OrderPage() {
             {!submittedOrder ? (
               <form onSubmit={handleSubmitOrder}>
                 <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-                  <h3 className="text-base font-black text-slate-900">
-                    登記蘇屋邨送菜地址
+                  <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
+                    <MapPin className="w-4 h-4 text-emerald-600" />
+                    <span>確認蘇屋邨送菜地址</span>
                   </h3>
                   <button
                     type="button"
                     onClick={() => setCheckoutOpen(false)}
-                    className="text-xs text-slate-400 hover:text-slate-600"
+                    className="text-xs text-slate-400 hover:text-slate-600 cursor-pointer"
                   >
                     取消
                   </button>
                 </div>
 
                 <div className="mt-4 space-y-3.5 text-xs">
-                  <div>
-                    <label className="block font-bold text-slate-700 mb-1">
-                      8 位香港手機號碼
-                    </label>
-                    <div className="relative">
-                      <span className="absolute left-3 top-2.5 text-slate-400 font-bold">+852</span>
-                      <input
-                        type="tel"
-                        maxLength={8}
-                        value={phone}
-                        onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))}
-                        placeholder="例如：91234567"
-                        className="w-full pl-14 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:border-emerald-500 focus:outline-none font-bold text-sm"
-                        required
-                      />
-                    </div>
-                  </div>
+                  {/* 情况 A：已记住资料的老街坊，展示高大上的快速确认卡片，无需重复输入！ */}
+                  {currentCustomer && currentCustomer.flatNo && !editingAddress ? (
+                    <div className="bg-emerald-50/90 border border-emerald-200 rounded-2xl p-4 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="font-black text-emerald-950 flex items-center gap-1.5 text-xs">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                          <span>送達地址 (已自動載入，免重複輸入)</span>
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setEditingAddress(true)}
+                          className="text-emerald-700 hover:underline font-bold text-xs flex items-center gap-1 cursor-pointer"
+                        >
+                          <Edit2 className="w-3 h-3" />
+                          <span>修改房號或稱呼</span>
+                        </button>
+                      </div>
 
-                  <div className="grid grid-cols-2 gap-2.5">
-                    <div>
-                      <label className="block font-bold text-slate-700 mb-1">街坊稱呼</label>
-                      <input
-                        type="text"
-                        value={realName}
-                        onChange={(e) => setRealName(e.target.value)}
-                        placeholder="例如：陳太"
-                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:border-emerald-500 focus:outline-none font-bold"
-                        required
-                      />
+                      <div className="bg-white p-3.5 rounded-xl border border-emerald-100 shadow-sm space-y-1.5">
+                        <div className="font-black text-slate-900 text-base">
+                          深水埗蘇屋邨 {buildingName} {flatNo}
+                        </div>
+                        <div className="text-slate-600 font-bold text-xs flex items-center gap-2">
+                          <span>街坊稱呼：{realName}</span>
+                          <span>·</span>
+                          <span>手機號：+852 {phone}</span>
+                        </div>
+                        <div className="text-[11px] text-emerald-700 pt-1.5 border-t border-slate-100 flex items-center gap-1">
+                          <Clock className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" />
+                          <span>清晨 {config?.deliveryTimeWindow || "07:15 - 08:00"} 專人懸掛於鐵閘把手</span>
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <label className="block font-bold text-slate-700 mb-1">大廈座號</label>
-                      <select
-                        value={buildingName}
-                        onChange={(e) => setBuildingName(e.target.value)}
-                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:border-emerald-500 focus:outline-none font-bold"
-                      >
-                        <option value="牡丹樓">牡丹樓 (有樓長)</option>
-                        <option value="金菊樓">金菊樓 (直通車專送)</option>
-                        <option value="茶花樓">茶花樓</option>
-                        <option value="杜鵑樓">杜鵑樓</option>
-                        <option value="綠柳樓">綠柳樓</option>
-                        <option value="櫻桃樓">櫻桃樓</option>
-                        <option value="荷花樓">荷花樓</option>
-                        <option value="蘭花樓">蘭花樓</option>
-                        <option value="壽菊樓">壽菊樓</option>
-                        <option value="百合樓">百合樓</option>
-                        <option value="楓林樓">楓林樓</option>
-                        <option value="丁香樓">丁香樓</option>
-                        <option value="劍蘭樓">劍蘭樓</option>
-                        <option value="海棠樓">海棠樓</option>
-                      </select>
-                    </div>
-                  </div>
+                  ) : (
+                    /* 情况 B：首次下单或主动点击修改地址，展示完整输入表单 */
+                    <div className="space-y-3 bg-slate-50 p-4 rounded-2xl border border-slate-200">
+                      {autoRecognizedMsg && (
+                        <div className="p-2.5 rounded-xl bg-emerald-100/80 border border-emerald-300 text-emerald-900 font-bold text-xs flex items-center gap-1.5 animate-in fade-in">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                          <span>{autoRecognizedMsg}</span>
+                        </div>
+                      )}
 
-                  <div>
-                    <label className="block font-bold text-slate-700 mb-1">
-                      門牌房號 (掛閘位置)
-                    </label>
-                    <input
-                      type="text"
-                      value={flatNo}
-                      onChange={(e) => setFlatNo(e.target.value)}
-                      placeholder="例如：1204室 (鐵閘外把手)"
-                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:border-emerald-500 focus:outline-none font-bold"
-                      required
-                    />
-                  </div>
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <label className="font-bold text-slate-700">8 位香港手機號碼</label>
+                          <span className="text-[10px] text-slate-400">輸滿8位自動匹配歷史檔案</span>
+                        </div>
+                        <div className="relative">
+                          <span className="absolute left-3 top-2.5 text-slate-400 font-bold">+852</span>
+                          <input
+                            type="tel"
+                            maxLength={8}
+                            value={phone}
+                            onChange={(e) => handlePhoneInputChange(e.target.value)}
+                            placeholder="例如：91234567"
+                            className="w-full pl-14 pr-3 py-2 bg-white border border-slate-200 rounded-xl focus:border-emerald-500 focus:outline-none font-bold text-sm font-mono"
+                            required
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2.5">
+                        <div>
+                          <label className="block font-bold text-slate-700 mb-1">街坊稱呼</label>
+                          <input
+                            type="text"
+                            value={realName}
+                            onChange={(e) => setRealName(e.target.value)}
+                            placeholder="例如：陳太 / 李生"
+                            className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl focus:border-emerald-500 focus:outline-none font-bold"
+                            required
+                          />
+                        </div>
+                        <div>
+                          <label className="block font-bold text-slate-700 mb-1">大廈座號</label>
+                          <select
+                            value={buildingName}
+                            onChange={(e) => setBuildingName(e.target.value)}
+                            className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl focus:border-emerald-500 focus:outline-none font-bold"
+                          >
+                            <option value="牡丹樓">牡丹樓 (有樓長)</option>
+                            <option value="金菊樓">金菊樓 (直通車專送)</option>
+                            <option value="茶花樓">茶花樓</option>
+                            <option value="杜鵑樓">杜鵑樓</option>
+                            <option value="綠柳樓">綠柳樓</option>
+                            <option value="櫻桃樓">櫻桃樓</option>
+                            <option value="荷花樓">荷花樓</option>
+                            <option value="蘭花樓">蘭花樓</option>
+                            <option value="壽菊樓">壽菊樓</option>
+                            <option value="百合樓">百合樓</option>
+                            <option value="楓林樓">楓林樓</option>
+                            <option value="丁香樓">丁香樓</option>
+                            <option value="劍蘭樓">劍蘭樓</option>
+                            <option value="海棠樓">海棠樓</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block font-bold text-slate-700 mb-1">
+                          門牌房號 (清晨掛鐵閘位置)
+                        </label>
+                        <input
+                          type="text"
+                          value={flatNo}
+                          onChange={(e) => setFlatNo(e.target.value)}
+                          placeholder="例如：1204室 (鐵閘外把手)"
+                          className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl focus:border-emerald-500 focus:outline-none font-bold"
+                          required
+                        />
+                      </div>
+
+                      {currentCustomer && editingAddress && (
+                        <div className="pt-1 flex justify-end">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (phone && realName && flatNo) {
+                                const updated = {
+                                  ...currentCustomer,
+                                  phone,
+                                  realName,
+                                  buildingName,
+                                  flatNo,
+                                };
+                                setCurrentCustomer(updated);
+                                if (typeof window !== "undefined") {
+                                  localStorage.setItem("hk_fresh_customer_profile", JSON.stringify(updated));
+                                }
+                                setEditingAddress(false);
+                              } else {
+                                alert("請完整填寫稱呼與房號");
+                              }
+                            }}
+                            className="text-xs bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold px-3 py-1 rounded-lg transition"
+                          >
+                            保存並折疊地址
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                   {/* 订单明细清单 */}
-                  <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                  <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200">
                     <div className="font-bold text-slate-600 mb-1.5 flex justify-between">
                       <span>訂單摘要</span>
                       <span className="text-emerald-700">共 {totalItemsCount} 份蔬菜</span>
@@ -1046,9 +1387,13 @@ export default function OrderPage() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="w-full mt-5 bg-emerald-600 hover:bg-emerald-700 text-white font-black py-3 rounded-xl text-sm shadow-md active:scale-95 transition flex items-center justify-center gap-1.5"
+                  className="w-full mt-5 bg-emerald-600 hover:bg-emerald-700 text-white font-black py-3 rounded-xl text-sm shadow-md active:scale-95 transition flex items-center justify-center gap-1.5 cursor-pointer"
                 >
-                  {submitting ? "正在登記訂單..." : "確認下單 · 明日清晨掛鐵閘"}
+                  {submitting
+                    ? "正在登記訂單..."
+                    : currentCustomer?.flatNo && !editingAddress
+                    ? "🚀 一鍵確認下單 · 明日清晨掛鐵閘"
+                    : "確認下單 · 明日清晨掛鐵閘"}
                 </button>
               </form>
             ) : (
@@ -1101,7 +1446,7 @@ export default function OrderPage() {
                     {/* 渠道 2: 微信一键复制订单并在微信对账 */}
                     <button
                       onClick={handleCopyWechatOrder}
-                      className="flex items-center justify-center gap-2 w-full bg-emerald-700 hover:bg-emerald-800 text-white font-black py-2.5 rounded-xl text-xs shadow transition active:scale-95"
+                      className="flex items-center justify-center gap-2 w-full bg-emerald-700 hover:bg-emerald-800 text-white font-black py-2.5 rounded-xl text-xs shadow transition active:scale-95 cursor-pointer"
                     >
                       <Copy className="w-4 h-4 text-yellow-300" />
                       <span>
@@ -1118,12 +1463,74 @@ export default function OrderPage() {
                     setSubmittedOrder(null);
                     setCheckoutOpen(false);
                   }}
-                  className="w-full text-xs text-slate-400 hover:text-slate-600 py-1"
+                  className="w-full text-xs text-slate-400 hover:text-slate-600 py-1 cursor-pointer"
                 >
                   返回首頁選菜
                 </button>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* ===================== 街坊会员快捷登录 / 载入档案弹窗 ===================== */}
+      {loginModalOpen && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in">
+          <div className="bg-white w-full max-w-sm rounded-2xl p-5 space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+              <h3 className="font-black text-slate-900 text-sm flex items-center gap-1.5">
+                <UserCheck className="w-4 h-4 text-emerald-600" />
+                <span>街坊會員登入 / 載入地址</span>
+              </h3>
+              <button
+                onClick={() => setLoginModalOpen(false)}
+                className="text-xs text-slate-400 hover:text-slate-600 cursor-pointer"
+              >
+                關閉
+              </button>
+            </div>
+
+            <p className="text-xs text-slate-500 leading-relaxed">
+              輸入您之前下單或登記過的 8 位香港手機號，系統將自動為您載入歷史送菜大廈、門牌房號與買菜積分：
+            </p>
+
+            <div className="space-y-3">
+              <div className="relative">
+                <span className="absolute left-3 top-2.5 text-slate-400 font-bold text-xs">+852</span>
+                <input
+                  type="tel"
+                  maxLength={8}
+                  value={loginPhoneInput}
+                  onChange={(e) => setLoginPhoneInput(e.target.value.replace(/\D/g, ""))}
+                  placeholder="輸入手機號，例如：91234567"
+                  className="w-full pl-14 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold focus:border-emerald-500 focus:outline-none font-mono"
+                  autoFocus
+                />
+              </div>
+
+              <div className="flex gap-1.5 text-[10px] text-slate-400 items-center">
+                <span>測試演示賬號：</span>
+                <button
+                  type="button"
+                  onClick={() => setLoginPhoneInput("91112233")}
+                  className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-2 py-0.5 rounded font-bold"
+                >
+                  陳太 (91112233)
+                </button>
+              </div>
+
+              <button
+                onClick={() => handleQuickLogin(loginPhoneInput)}
+                disabled={loginLoading}
+                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-black py-2.5 rounded-xl text-xs shadow transition active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                {loginLoading ? "正在尋找街坊檔案..." : "一鍵登入並載入地址"}
+              </button>
+            </div>
+
+            <div className="pt-2 border-t border-slate-100 text-[11px] text-slate-400 text-center">
+              💡 免密無感設計：無需繁瑣密碼，手機號即終身會員卡
+            </div>
           </div>
         </div>
       )}
@@ -1139,7 +1546,7 @@ export default function OrderPage() {
               </h3>
               <button
                 onClick={() => setWechatModalOpen(false)}
-                className="text-xs text-slate-400 hover:text-slate-600"
+                className="text-xs text-slate-400 hover:text-slate-600 cursor-pointer"
               >
                 關閉
               </button>
@@ -1165,7 +1572,7 @@ export default function OrderPage() {
 
               <button
                 onClick={handleCopyWechatId}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg active:scale-95 transition"
+                className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg active:scale-95 transition cursor-pointer"
               >
                 {copiedWechatId ? "已複製微訊號" : "複製微訊號"}
               </button>
@@ -1177,7 +1584,7 @@ export default function OrderPage() {
 
             <button
               onClick={() => setWechatModalOpen(false)}
-              className="w-full bg-slate-900 text-white py-2.5 rounded-xl text-xs font-bold hover:bg-slate-800 transition"
+              className="w-full bg-slate-900 text-white py-2.5 rounded-xl text-xs font-bold hover:bg-slate-800 transition cursor-pointer"
             >
               我知道了，返回商城
             </button>
@@ -1195,7 +1602,7 @@ export default function OrderPage() {
               </h3>
               <button
                 onClick={() => setFruitNotifyModalOpen(false)}
-                className="text-xs text-slate-400 hover:text-slate-600"
+                className="text-xs text-slate-400 hover:text-slate-600 cursor-pointer"
               >
                 關閉
               </button>
@@ -1241,7 +1648,7 @@ export default function OrderPage() {
                       alert("請輸入完整的 8 位香港電話號碼");
                     }
                   }}
-                  className="w-full bg-gradient-to-r from-amber-400 to-orange-400 text-slate-950 font-black py-2.5 rounded-xl text-xs shadow active:scale-95 transition"
+                  className="w-full bg-gradient-to-r from-amber-400 to-orange-400 text-slate-950 font-black py-2.5 rounded-xl text-xs shadow active:scale-95 transition cursor-pointer"
                 >
                   確認預約到貨提醒
                 </button>
@@ -1257,7 +1664,7 @@ export default function OrderPage() {
                 </p>
                 <button
                   onClick={() => setFruitNotifyModalOpen(false)}
-                  className="mt-2 w-full py-2 bg-slate-900 text-white rounded-xl text-xs font-bold"
+                  className="mt-2 w-full py-2 bg-slate-900 text-white rounded-xl text-xs font-bold cursor-pointer"
                 >
                   返回商城
                 </button>
@@ -1278,7 +1685,7 @@ export default function OrderPage() {
               </h3>
               <button
                 onClick={() => setWalletModalOpen(false)}
-                className="text-xs text-slate-400 hover:text-slate-600"
+                className="text-xs text-slate-400 hover:text-slate-600 cursor-pointer"
               >
                 關閉
               </button>
@@ -1291,12 +1698,12 @@ export default function OrderPage() {
                 value={walletPhone}
                 onChange={(e) => setWalletPhone(e.target.value.replace(/\D/g, ""))}
                 placeholder="輸入 8 位香港電話查詢"
-                className="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold"
+                className="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold font-mono"
               />
               <button
                 onClick={() => queryPointsWallet(walletPhone)}
                 disabled={walletLoading}
-                className="bg-emerald-600 text-white px-3 py-2 rounded-xl text-xs font-bold"
+                className="bg-emerald-600 text-white px-3 py-2 rounded-xl text-xs font-bold cursor-pointer"
               >
                 {walletLoading ? "..." : "查詢"}
               </button>
@@ -1309,7 +1716,7 @@ export default function OrderPage() {
                   setWalletPhone("91112233");
                   queryPointsWallet("91112233");
                 }}
-                className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-2 py-0.5 rounded font-bold"
+                className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-2 py-0.5 rounded font-bold cursor-pointer"
               >
                 陳太 (91112233)
               </button>
@@ -1347,7 +1754,7 @@ export default function OrderPage() {
                 {walletData.availablePoints >= 100 ? (
                   <button
                     onClick={handleRedeemPoints}
-                    className="w-full bg-orange-500 hover:bg-orange-600 text-white font-black py-2 rounded-xl text-xs shadow transition active:scale-95"
+                    className="w-full bg-orange-500 hover:bg-orange-600 text-white font-black py-2 rounded-xl text-xs shadow transition active:scale-95 cursor-pointer"
                   >
                     🎉 立即使用 100 積分兌換 1 包青菜！
                   </button>
@@ -1379,7 +1786,7 @@ export default function OrderPage() {
               </h3>
               <button
                 onClick={() => setShareModalOpen(false)}
-                className="text-xs text-slate-400 hover:text-slate-600"
+                className="text-xs text-slate-400 hover:text-slate-600 cursor-pointer"
               >
                 關閉
               </button>
@@ -1394,7 +1801,7 @@ export default function OrderPage() {
 
             <button
               onClick={handleCopyReferral}
-              className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-1.5 shadow active:scale-95 transition"
+              className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-1.5 shadow active:scale-95 transition cursor-pointer"
             >
               {copiedLink ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
               <span>{copiedLink ? "已複製專屬分享鏈接與文案！" : "一鍵複製專屬推薦文案與鏈接"}</span>
