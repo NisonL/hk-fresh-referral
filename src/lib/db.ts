@@ -70,7 +70,7 @@ const INITIAL_PRODUCTS: Product[] = [
   {
     id: "prod-2",
     nameZh: "東莞甜脆生菜 (綠色無公害)",
-    subTitle: "足500g保鮮裝 · 晨早露水摘採 · 炒灼皆宜",
+    subTitle: "足500g保鮮裝 · 供港源頭直供 · 炒灼皆宜",
     priceHkd: 7.0,
     marketPriceHkd: 11.0,
     netWeight: "500g",

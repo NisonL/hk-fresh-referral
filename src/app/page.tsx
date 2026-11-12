@@ -51,7 +51,7 @@ const UPCOMING_FRUITS = [
   {
     id: "fruit-2",
     nameZh: "雲南高山特級藍莓 (雙盒精裝)",
-    subTitle: "足125g x 2盒 · 晨摘白霜濃郁 · 果粉飽滿爆漿",
+    subTitle: "足125g x 2盒 · 高原冷鏈直發 · 果粉飽滿爆漿",
     origin: "雲南基地直供",
     referencePrice: 36.0,
     previewPrice: 24.0,
@@ -62,7 +62,7 @@ const UPCOMING_FRUITS = [
   {
     id: "fruit-3",
     nameZh: "廣西特選自然熟砂糖桔/沃柑",
-    subTitle: "足500g網袋裝 · 樹上自然熟採摘 · 清甜無渣多汁",
+    subTitle: "足500g網袋裝 · 樹上自然熟透 · 清甜無渣多汁",
     origin: "廣西果園直供",
     referencePrice: 16.0,
     previewPrice: 9.8,

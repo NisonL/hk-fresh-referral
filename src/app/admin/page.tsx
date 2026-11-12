@@ -72,7 +72,7 @@ export default function AdminPage() {
   const [addProductModalOpen, setAddProductModalOpen] = useState(false);
   const [newProductForm, setNewProductForm] = useState<Partial<Product>>({
     nameZh: "",
-    subTitle: "足500g保鮮裝 · 晨早露水摘採 · 炒灼皆宜",
+    subTitle: "足500g保鮮裝 · 供港源頭直供 · 炒灼皆宜",
     netWeight: "500g",
     priceHkd: 8.5,
     marketPriceHkd: 12.0,
@@ -216,7 +216,7 @@ export default function AdminPage() {
       setAddProductModalOpen(false);
       setNewProductForm({
         nameZh: "",
-        subTitle: "足500g保鮮裝 · 晨早露水摘採 · 炒灼皆宜",
+        subTitle: "足500g保鮮裝 · 供港源頭直供 · 炒灼皆宜",
         netWeight: "500g",
         priceHkd: 8.5,
         marketPriceHkd: 12.0,
